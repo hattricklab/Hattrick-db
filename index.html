@@ -290,7 +290,7 @@
             try {
                 const { data: testData, error: testError } = await sb
                     .from('services')
-                    .select('id, name, price, active, category, visible_external')
+                    .select('id, name, price, active, categories, visible_external')
                     .eq('active', true)
                     .eq('visible_external', true)
                     .order('name', { ascending: true });
@@ -325,7 +325,9 @@
 
                 const uniqueCats = new Set();
                 allTests.forEach(t => {
-                    if(t.category) uniqueCats.add(t.category.trim());
+                    (Array.isArray(t.categories) ? t.categories : []).forEach(c => {
+                        if (c && c.trim() && c.trim() !== 'Uncategorized') uniqueCats.add(c.trim());
+                    });
                 });
                 dbCategories = Array.from(uniqueCats).sort();
 
@@ -521,7 +523,7 @@
                 filtered = allTests; 
             } else if (currentTopTab !== '' && currentSubFilterValue !== '') {
                 if (currentTopTab === 'category') {
-                    filtered = filtered.filter(test => test.category && test.category.trim() === currentSubFilterValue);
+                    filtered = filtered.filter(test => Array.isArray(test.categories) && test.categories.includes(currentSubFilterValue));
                 } else {
                     const configArr = profilePackages[currentTopTab] || [];
                     const selectedConfig = configArr.find(c => c.id === currentSubFilterValue);
