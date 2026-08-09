@@ -1,7 +1,11 @@
-  // ---------- Deposit / Withdraw (Cash <-> Bank transfer) ----------
+// ---------- Deposit / Withdraw (Cash <-> Bank transfer) ----------
+  wireDateDisplay('transferDate', 'transferDateDisplay');
+
   document.getElementById('ledgerTransferBtn').addEventListener('click', () => {
     document.getElementById('transferValue').value = '';
     document.getElementById('transferNote').value = '';
+    document.getElementById('transferDate').value = acctToday();
+    document.getElementById('transferDate').dispatchEvent(new Event('change'));
     clearMsg(document.getElementById('transferMsg'));
     openModal('transferModal');
   });
@@ -12,6 +16,7 @@
     const amount = parseFloat(document.getElementById('transferValue').value);
     const note = document.getElementById('transferNote').value.trim();
     const direction = getSelectedMode('transferDirectionPills');
+    const dateVal = document.getElementById('transferDate').value || acctToday();
 
     if (isNaN(amount) || amount <= 0){
       showMsg(msgEl, 'Enter a valid amount.', 'err');
@@ -19,7 +24,7 @@
     }
 
     const { error } = await sb.from('cash_transfers').insert({
-      date: acctToday(), direction, amount, note: note || null
+      date: dateVal, direction, amount, note: note || null
     });
 
     if (error){ showMsg(msgEl, 'Could not save: ' + error.message, 'err'); return; }
