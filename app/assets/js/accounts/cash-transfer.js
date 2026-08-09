@@ -1,11 +1,8 @@
 // ---------- Deposit / Withdraw (Cash <-> Bank transfer) ----------
-  wireDateDisplay('transferDate', 'transferDateDisplay');
-
   document.getElementById('ledgerTransferBtn').addEventListener('click', () => {
     document.getElementById('transferValue').value = '';
     document.getElementById('transferNote').value = '';
     document.getElementById('transferDate').value = acctToday();
-    document.getElementById('transferDate').dispatchEvent(new Event('change'));
     clearMsg(document.getElementById('transferMsg'));
     openModal('transferModal');
   });
