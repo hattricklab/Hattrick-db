@@ -1,11 +1,8 @@
 // ---------- Add Amount (manual cash-in) ----------
-  wireDateDisplay('addAmountDate', 'addAmountDateDisplay');
-
   document.getElementById('ledgerAddAmountBtn').addEventListener('click', () => {
     document.getElementById('addAmountValue').value = '';
     document.getElementById('addAmountReason').value = 'Manual Cash Input';
     document.getElementById('addAmountDate').value = acctToday();
-    document.getElementById('addAmountDate').dispatchEvent(new Event('change'));
     clearMsg(document.getElementById('addAmountMsg'));
     openModal('addAmountModal');
   });
