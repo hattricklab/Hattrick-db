@@ -1,7 +1,11 @@
-  // ---------- Add Amount (manual cash-in) ----------
+// ---------- Add Amount (manual cash-in) ----------
+  wireDateDisplay('addAmountDate', 'addAmountDateDisplay');
+
   document.getElementById('ledgerAddAmountBtn').addEventListener('click', () => {
     document.getElementById('addAmountValue').value = '';
     document.getElementById('addAmountReason').value = 'Manual Cash Input';
+    document.getElementById('addAmountDate').value = acctToday();
+    document.getElementById('addAmountDate').dispatchEvent(new Event('change'));
     clearMsg(document.getElementById('addAmountMsg'));
     openModal('addAmountModal');
   });
@@ -12,16 +16,16 @@
     const amount = parseFloat(document.getElementById('addAmountValue').value);
     const reason = document.getElementById('addAmountReason').value.trim() || 'Manual Cash Input';
     const mode = getSelectedMode('addAmountModePills');
+    const dateVal = document.getElementById('addAmountDate').value || acctToday();
 
     if (isNaN(amount) || amount <= 0){
       showMsg(msgEl, 'Enter a valid amount.', 'err');
       return;
     }
 
-    const ts = nowIST();
     const record = {
       invoiceNumber: `CASH-${Date.now()}`,
-      invoiceDate: istDateStr(ts),
+      invoiceDate: dateVal,
       customerId: null,
       customerName: reason,
       b2bName: '',
@@ -44,4 +48,3 @@
     await acctLoadLedgerAll();
     await acctLoadBalances();
   });
-
