@@ -4,6 +4,8 @@
   const FIXED_EXPENSE_CATEGORIES = ['Rent','Electricity (EB Bill)','Salary','Recharge','Water Can',
     'Interest on EMI','SRM Settlement','Home Collection Charge','Supplies','Maintenance','Misc','Other'];
 
+  wireDateDisplay('addExpenseDate', 'addExpenseDateDisplay');
+
   function expSelectModePill(mode){
     const pills = document.querySelectorAll('#addExpenseModePills .mode-pill');
     pills.forEach(p => p.classList.toggle('selected', p.dataset.mode === mode));
@@ -17,6 +19,8 @@
     document.getElementById('addExpenseCategory').value = 'Other';
     document.getElementById('addExpenseNewCategory').value = '';
     document.getElementById('addExpenseNewCategoryWrap').style.display = 'none';
+    document.getElementById('addExpenseDate').value = acctToday();
+    document.getElementById('addExpenseDate').dispatchEvent(new Event('change'));
     expSelectModePill('Cash');
     clearMsg(document.getElementById('addExpenseMsg'));
     openModal('addExpenseModal');
@@ -28,6 +32,8 @@
     document.querySelector('#addExpenseModal .modal-title').textContent = 'Edit Expense';
     document.getElementById('addExpenseValue').value = entry.paid || 0;
     document.getElementById('addExpenseDescription').value = entry.customer || '';
+    document.getElementById('addExpenseDate').value = entry.date || acctToday();
+    document.getElementById('addExpenseDate').dispatchEvent(new Event('change'));
 
     const category = entry.category || 'Other';
     const catSelect = document.getElementById('addExpenseCategory');
@@ -61,6 +67,7 @@
       ? document.getElementById('addExpenseNewCategory').value.trim()
       : categorySelect;
     const mode = getSelectedMode('addExpenseModePills');
+    const dateVal = document.getElementById('addExpenseDate').value || acctToday();
 
     if (isNaN(amount) || amount <= 0){
       showMsg(msgEl, 'Enter a valid amount.', 'err');
@@ -78,11 +85,11 @@
     let error;
     if (editingExpenseId){
       ({ error } = await sb.from('expenses').update({
-        category, description, amount, source: mode
+        category, description, amount, source: mode, date: dateVal
       }).eq('id', editingExpenseId));
     } else {
       ({ error } = await sb.from('expenses').insert({
-        date: acctToday(), category, description, amount, source: mode, added_by: 'admin'
+        date: dateVal, category, description, amount, source: mode, added_by: 'admin'
       }));
     }
     if (error){ showMsg(msgEl, 'Could not save: ' + error.message, 'err'); return; }
