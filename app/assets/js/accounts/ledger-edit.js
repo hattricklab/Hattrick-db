@@ -1,4 +1,4 @@
-  // ---------- Edit Invoice Entry (from Admin > Ledger) ----------
+// ---------- Edit Invoice Entry (from Admin > Ledger) ----------
   let editingLedgerId = null;
 
   function ledgerSelectModePill(containerId, mode){
@@ -10,6 +10,7 @@
   function openInvoiceEditModal(entry){
     editingLedgerId = entry._ledgerId;
     document.getElementById('editInvCustomer').value = entry.customer || '';
+    document.getElementById('editInvDate').value = entry.date || acctToday();
     document.getElementById('editInvDiscount').value = entry.discount || 0;
     document.getElementById('editInvOtherCharges').value = entry.otherCharges || 0;
     document.getElementById('editInvPaidAmount').value = entry.paid || 0;
@@ -28,6 +29,7 @@
     const invoiceTotal = entry ? (parseFloat(entry.total) || 0) : 0;
 
     const customerName = document.getElementById('editInvCustomer').value.trim();
+    const invoiceDate = document.getElementById('editInvDate').value;
     const discount = parseFloat(document.getElementById('editInvDiscount').value) || 0;
     const otherCharges = parseFloat(document.getElementById('editInvOtherCharges').value) || 0;
     const paidAmount = parseFloat(document.getElementById('editInvPaidAmount').value) || 0;
@@ -37,12 +39,16 @@
       showMsg(msgEl, 'Customer name is required.', 'err');
       return;
     }
+    if (!invoiceDate){
+      showMsg(msgEl, 'Date is required.', 'err');
+      return;
+    }
 
     const grandTotal = Math.max(0, invoiceTotal - discount + otherCharges);
     const balanceDue = Math.max(0, grandTotal - paidAmount);
 
     const { error } = await sb.from('ledger').update({
-      customerName, discount, otherCharges,
+      customerName, invoiceDate, discount, otherCharges,
       customerPaidAmount: paidAmount, customerPaymentMode: mode,
       grandTotal, balanceDue
     }).eq('id', editingLedgerId);
