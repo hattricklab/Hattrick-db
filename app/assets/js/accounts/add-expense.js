@@ -9,11 +9,26 @@
     pills.forEach(p => p.classList.toggle('selected', p.dataset.mode === mode));
   }
 
-  document.getElementById('ledgerAddExpenseBtn').addEventListener('click', () => {
+  // Pulls every category that's actually been used before (including custom
+  // ones typed via "+ New category…") and rebuilds the dropdown so they
+  // never have to be re-typed — they just show up as normal options.
+  async function expRefreshCategoryOptions(){
+    const select = document.getElementById('addExpenseCategory');
+    const { data } = await sb.from('expenses').select('category').limit(5000);
+    const usedCategories = Array.from(new Set((data || []).map(r => (r.category || '').trim()).filter(Boolean)));
+    const customCategories = usedCategories.filter(c => !FIXED_EXPENSE_CATEGORIES.includes(c)).sort();
+
+    const allCategories = [...FIXED_EXPENSE_CATEGORIES, ...customCategories];
+    select.innerHTML = allCategories.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('')
+      + '<option value="__new__">+ New category…</option>';
+  }
+
+  document.getElementById('ledgerAddExpenseBtn').addEventListener('click', async () => {
     editingExpenseId = null;
     document.querySelector('#addExpenseModal .modal-title').textContent = 'Add Expense';
     document.getElementById('addExpenseValue').value = '';
     document.getElementById('addExpenseDescription').value = '';
+    await expRefreshCategoryOptions();
     document.getElementById('addExpenseCategory').value = 'Other';
     document.getElementById('addExpenseNewCategory').value = '';
     document.getElementById('addExpenseNewCategoryWrap').style.display = 'none';
@@ -24,16 +39,18 @@
   });
 
   // Called from admin-full-ledger.js when "Edit" is clicked on an existing expense row.
-  function openExpenseEditModal(entry){
+  async function openExpenseEditModal(entry){
     editingExpenseId = entry._expenseId;
     document.querySelector('#addExpenseModal .modal-title').textContent = 'Edit Expense';
     document.getElementById('addExpenseValue').value = entry.paid || 0;
     document.getElementById('addExpenseDescription').value = entry.customer || '';
     document.getElementById('addExpenseDate').value = entry.date || acctToday();
 
+    await expRefreshCategoryOptions();
     const category = entry.category || 'Other';
     const catSelect = document.getElementById('addExpenseCategory');
-    if (FIXED_EXPENSE_CATEGORIES.includes(category)){
+    const optionExists = Array.from(catSelect.options).some(o => o.value === category);
+    if (optionExists){
       catSelect.value = category;
       document.getElementById('addExpenseNewCategoryWrap').style.display = 'none';
       document.getElementById('addExpenseNewCategory').value = '';
