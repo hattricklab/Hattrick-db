@@ -79,7 +79,11 @@
       });
     });
 
-    ledgerAllRows = [...invEntries, ...expEntries, ...paymentEntries, ...transferEntries].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    ledgerAllRows = [...invEntries, ...expEntries, ...paymentEntries, ...transferEntries].sort((a, b) => {
+      const dateDiff = new Date(b.date) - new Date(a.date);
+      if (dateDiff !== 0) return dateDiff;
+      return new Date(b.timestamp) - new Date(a.timestamp);
+    });
     ledgerPopulateMonthFilter();
     ledgerApplyFilters();
   }
