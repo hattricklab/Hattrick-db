@@ -1,5 +1,20 @@
 // ---------- Expenses ----------
+  const EXP_FIXED_CATEGORIES = ['Rent','Electricity (EB Bill)','Salary','Recharge','Water Can',
+    'Interest on EMI','SRM Settlement','Home Collection Charge','Supplies','Maintenance','Misc','Other'];
+
+  async function expRefreshEmployeeCategoryOptions(){
+    const select = document.getElementById('expCategory');
+    const { data } = await sb.from('expenses').select('category').limit(5000);
+    const usedCategories = Array.from(new Set((data || []).map(r => (r.category || '').trim()).filter(Boolean)));
+    const customCategories = usedCategories.filter(c => !EXP_FIXED_CATEGORIES.includes(c)).sort();
+    const allCategories = [...EXP_FIXED_CATEGORIES, ...customCategories];
+    const previousValue = select.value;
+    select.innerHTML = allCategories.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+    if (allCategories.includes(previousValue)) select.value = previousValue;
+  }
+
   async function expLoad(){
+    await expRefreshEmployeeCategoryOptions();
     const { data, error } = await sb.from('expenses').select('*').neq('added_by', 'admin').order('date', { ascending: false }).limit(100);
     const body = document.getElementById('expTableBody');
     if (error || !data || data.length === 0){
