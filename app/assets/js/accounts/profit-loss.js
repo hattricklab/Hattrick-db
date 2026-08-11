@@ -45,10 +45,21 @@
     if (!tbody) return;
     tbody.innerHTML = '<tr><td class="empty">Loading…</td></tr>';
 
-    const [{ data: invRows }, { data: expRows }] = await Promise.all([
-      sb.from('ledger').select('invoiceDate, grandTotal, balanceDue, type').limit(5000),
-      sb.from('expenses').select('date, category, amount').limit(5000)
+    const [{ data: invRows }, { data: expRows }, { data: clearanceRows }] = await Promise.all([
+      sb.from('ledger').select('invoiceDate, invoiceNumber, grandTotal, balanceDue, type').limit(5000),
+      sb.from('expenses').select('date, category, amount').limit(5000),
+      sb.from('payment_clearances').select('invoiceNumber, amount').limit(5000)
     ]);
+
+    // Sum of payments already collected against each invoice's original
+    // balanceDue (payment_clearances is a separate table, never rolled back
+    // into ledger.balanceDue itself — without this, Outstanding would keep
+    // counting invoices that were actually paid off later).
+    const clearedByInvoice = {};
+    (clearanceRows || []).forEach(c => {
+      const amt = parseFloat(c.amount) || 0;
+      clearedByInvoice[c.invoiceNumber] = (clearedByInvoice[c.invoiceNumber] || 0) + amt;
+    });
 
     const months = {};
     const ensureMonth = (key) => months[key] || (months[key] = {
@@ -61,7 +72,9 @@
       if (!key) return;
       const m = ensureMonth(key);
       m.sales += parseFloat(r.grandTotal) || 0;
-      m.outstanding += parseFloat(r.balanceDue) || 0;
+      const rawBalance = parseFloat(r.balanceDue) || 0;
+      const cleared = clearedByInvoice[r.invoiceNumber] || 0;
+      m.outstanding += Math.max(0, rawBalance - cleared);
     });
 
     (expRows || []).forEach(r => {
