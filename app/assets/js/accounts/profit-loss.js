@@ -46,7 +46,7 @@
     tbody.innerHTML = '<tr><td class="empty">Loading…</td></tr>';
 
     const [{ data: invRows }, { data: expRows }, { data: clearanceRows }] = await Promise.all([
-      sb.from('ledger').select('invoiceDate, invoiceNumber, grandTotal, balanceDue, type').limit(5000),
+      sb.from('ledger').select('invoiceDate, invoiceNumber, invoiceTotal, discount, otherCharges, customerPaidAmount, type').limit(5000),
       sb.from('expenses').select('date, category, amount').limit(5000),
       sb.from('payment_clearances').select('invoiceNumber, amount').limit(5000)
     ]);
@@ -71,10 +71,19 @@
       const key = pnlMonthKey(r.invoiceDate);
       if (!key) return;
       const m = ensureMonth(key);
-      m.sales += parseFloat(r.grandTotal) || 0;
-      const rawBalance = parseFloat(r.balanceDue) || 0;
+      // The stored grandTotal column has been found to be unreliable on
+      // some rows (sometimes = invoiceTotal, sometimes = amount paid,
+      // sometimes 0) — so Sales is computed fresh here instead of trusted
+      // from that column.
+      const invoiceTotal = parseFloat(r.invoiceTotal) || 0;
+      const discount = parseFloat(r.discount) || 0;
+      const otherCharges = parseFloat(r.otherCharges) || 0;
+      const trueGrandTotal = Math.max(0, invoiceTotal - discount + otherCharges);
+      m.sales += trueGrandTotal;
+      const paidAmount = parseFloat(r.customerPaidAmount) || 0;
+      const trueBalanceDue = Math.max(0, trueGrandTotal - paidAmount);
       const cleared = clearedByInvoice[r.invoiceNumber] || 0;
-      m.outstanding += Math.max(0, rawBalance - cleared);
+      m.outstanding += Math.max(0, trueBalanceDue - cleared);
     });
 
     (expRows || []).forEach(r => {
