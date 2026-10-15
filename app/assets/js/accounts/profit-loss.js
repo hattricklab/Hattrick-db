@@ -71,32 +71,19 @@
       const key = pnlMonthKey(r.invoiceDate);
       if (!key) return;
       const m = ensureMonth(key);
-      
-      // ROBUST CALCULATION FIX: 
-      // Checking values safely. If invoiceTotal acts as subtotal or raw total, 
-      // we make sure discount is subtracted only if it hasn't been handled in database.
-      const invoiceTotal = parseFloat(r.invoiceTotal) || 0;
-      const discount = parseFloat(r.discount) || 0;
+      // The stored grandTotal column has been found to be unreliable on
+      // some rows (sometimes = invoiceTotal, sometimes = amount paid,
+      // sometimes 0) — so Sales is computed fresh here instead of trusted
+      // from that column.
+
+// NEW FIXED CODE (Direct Base Total Calculation):
+      const invoiceTotal = parseFloat(r.invoiceTotal) || 0; // Already Discount subtract aana final total
       const otherCharges = parseFloat(r.otherCharges) || 0;
-
-      // Safe Grand Total computation: 
-      // If invoiceTotal is already net, or if it requires deduction. 
-      // Usually invoice generator saves subtotal in invoiceTotal. Let's compute safely:
-      // If invoiceTotal already equals expected net, or if we subtract discount once safely:
-      let trueGrandTotal = invoiceTotal;
       
-      // If the stored invoiceTotal is raw subtotal (i.e. invoiceTotal - discount makes sense and isn't negative/absurd)
-      // Let's ensure we subtract discount properly if it's not already deducted in DB. 
-      // Standard safe formula: if discount exists, subtotal - discount + otherCharges. 
-      // But if DB invoiceTotal is already (Tests - Discount), then we add otherCharges. 
-      // Let's check: if invoiceTotal - discount >= 0, we can use it, otherwise fallback to invoiceTotal + otherCharges.
-      // To be 100% foolproof with your app's invoice calculator (where invoiceTotal in code is subtotal before discount):
-      trueGrandTotal = Math.max(0, invoiceTotal - discount + otherCharges);
-      
-      // NOTE: If your database invoiceTotal is ALREADY after discount, uncomment the line below instead:
-      // trueGrandTotal = Math.max(0, invoiceTotal + otherCharges);
-
+      // Discount-a marubadiyum minus pannaama, direct-a invoiceTotal + otherCharges add panrom
+      const trueGrandTotal = Math.max(0, invoiceTotal + otherCharges);
       m.sales += trueGrandTotal;
+
 
       const paidAmount = parseFloat(r.customerPaidAmount) || 0;
       const trueBalanceDue = Math.max(0, trueGrandTotal - paidAmount);
