@@ -71,14 +71,12 @@
       const key = pnlMonthKey(r.invoiceDate);
       if (!key) return;
       const m = ensureMonth(key);
-      // The stored grandTotal column has been found to be unreliable on
-      // some rows (sometimes = invoiceTotal, sometimes = amount paid,
-      // sometimes 0) — so Sales is computed fresh here instead of trusted
-      // from that column.
+      
+      // FIXED CALCULATION LOGIC: Removed redundant discount subtraction
       const invoiceTotal = parseFloat(r.invoiceTotal) || 0;
-      const discount = parseFloat(r.discount) || 0;
       const otherCharges = parseFloat(r.otherCharges) || 0;
-      const trueGrandTotal = Math.max(0, invoiceTotal - discount + otherCharges);
+      const trueGrandTotal = Math.max(0, invoiceTotal + otherCharges);
+      
       m.sales += trueGrandTotal;
       const paidAmount = parseFloat(r.customerPaidAmount) || 0;
       const trueBalanceDue = Math.max(0, trueGrandTotal - paidAmount);
