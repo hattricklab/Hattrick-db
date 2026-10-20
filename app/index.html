@@ -16,6 +16,7 @@
 <link rel="stylesheet" href="assets/css/employee.css">
 <link rel="stylesheet" href="assets/css/invoice.css">
 <link rel="stylesheet" href="assets/css/accounts.css">
+<link rel="stylesheet" href="assets/css/attendance.css">
 </head>
 <body>
 
@@ -49,6 +50,11 @@
     <div>
       <div class="greeting-eyebrow">Signed in as</div>
       <div class="greeting">Admin</div>
+      <div class="mini-clock">
+        <div class="status-tag" id="admStatusTag"><span class="status-dot"></span><span id="admStatusText">Off shift</span></div>
+        <div class="timer idle" id="admTimer">00:00:00</div>
+        <button class="punch-btn in" id="admPunchBtn">Check In</button>
+      </div>
     </div>
     <button class="btn ghost" id="adminLogout">Log out</button>
   </div>
@@ -77,6 +83,14 @@
         <div style="display:flex; justify-content:space-between; font-size:13px; padding:4px 0;"><span class="cust-meta">Digital Balance</span><strong id="dashDigitalBalance">—</strong></div>
         <div style="display:flex; justify-content:space-between; font-size:13px; padding:4px 0;"><span class="cust-meta">Today's Profit</span><strong id="dashTodayProfit">—</strong></div>
       </div>
+    </div>
+
+    <div class="att-card" id="attDashCard">
+      <div class="att-card-head">
+        <span class="att-card-title">Attendance &mdash; on shift now</span>
+        <button class="btn ghost btn-sm" id="attDashRefresh">Refresh</button>
+      </div>
+      <div id="attDashBody"><div class="empty">Loading&hellip;</div></div>
     </div>
   </div>
 
@@ -1108,6 +1122,18 @@
 
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<!-- ATTENDANCE GATE (forced check-in / 4-hour reminder). Black & white, no close button. -->
+<div class="att-overlay" id="attGate" role="dialog" aria-modal="true" aria-labelledby="attGateTitle">
+  <div class="att-box">
+    <div class="att-eyebrow">Attendance</div>
+    <div class="att-title" id="attGateTitle"></div>
+    <div class="att-text" id="attGateText"></div>
+    <button type="button" class="att-btn att-btn-primary" id="attGatePrimary"></button>
+    <button type="button" class="att-btn att-btn-secondary" id="attGateSecondary"></button>
+    <div class="att-msg" id="attGateMsg"></div>
+  </div>
+</div>
+
 <script src="assets/js/core/supabase-client.js"></script>
 <script src="assets/js/core/logo.js"></script>
 <script src="assets/js/core/datetime.js"></script>
@@ -1118,6 +1144,7 @@
 <script src="assets/js/services/admin-services-management.js"></script>
 <script src="assets/js/services/packages.js"></script>
 <script src="assets/js/employee/employee-timer.js"></script>
+<script src="assets/js/employee/attendance.js"></script>
 <script src="assets/js/customer/customer-registration.js"></script>
 <script src="assets/js/dashboard/accounts-summary-card.js"></script>
 <script src="assets/js/customer/patient-id-autosuggest.js"></script>
