@@ -1,4 +1,4 @@
-  // ---------- Print / Save / Validate ----------
+// ---------- Print / Save / Validate ----------
   function invValidateInvoiceData(){
     const c = invGetSelectedCustomerData();
     if (!c){ invAlertModal('Please select a customer before generating the invoice.', 'error'); return false; }
@@ -31,7 +31,7 @@
 
     const invoiceHTML = invGenerateInvoiceHTML(window.invInvoiceData);
     const fullHTML = `<!DOCTYPE html>
-      <html lang="en"><head><meta charset="UTF-8"><title>Invoice ${window.invInvoiceData.invoiceNumber}</title>
+      <html lang="en"><head><meta charset="UTF-8"><title>Invoice ${escapeHtml(window.invInvoiceData.invoiceNumber)}</title>
       <style>
         body{ font-family:'Inter',sans-serif; margin:0; padding:20px; color:#000; }
         .invoice-table{ width:100%; border-collapse:collapse; margin-top:20px; font-size:11pt; }
@@ -63,7 +63,7 @@
     const chargesNote = data.chargesNote;
     const chargesNoteRow = (chargesNote.trim().length > 0) ? `
       <tr><td colspan="5" style="border:none; padding:0 0 8px 0; font-style:italic; font-size:0.9em;">
-        <span style="font-weight:bold;">Note:</span> ${chargesNote}
+        <span style="font-weight:bold;">Note:</span> ${escapeHtml(chargesNote)}
       </td></tr>` : '';
 
     tests.sort((a, b) => a.name.localeCompare(b.name));
@@ -72,7 +72,7 @@
       const price = parseFloat(test.price).toLocaleString('en-IN', fmt);
       return `<tr>
         <td style="border:1px solid #333; padding:8px;">${index + 1}</td>
-        <td style="border:1px solid #333; padding:8px;">${test.name}</td>
+        <td style="border:1px solid #333; padding:8px;">${escapeHtml(test.name)}</td>
         <td style="text-align:right; border:1px solid #333; padding:8px;">1</td>
         <td style="text-align:right; border:1px solid #333; padding:8px;">₹${price}</td>
         <td style="text-align:right; border:1px solid #333; padding:8px;">₹${price}</td>
@@ -93,7 +93,7 @@
 
     const paymentRow = `
       <tr>
-        <td colspan="3" style="border:none; padding:8px 0; font-weight:bold; font-size:0.9em;">Payment Status: ${paymentStatus} (${paymentModeText})</td>
+        <td colspan="3" style="border:none; padding:8px 0; font-weight:bold; font-size:0.9em;">Payment Status: ${paymentStatus} (${escapeHtml(paymentModeText)})</td>
         <td style="text-align:right; border:1px solid #333; border-top:1px solid #333; background-color:#f9f9f9; padding:8px;">Amount Paid:</td>
         <td style="text-align:right; border:1px solid #333; border-top:1px solid #333; background-color:#f9f9f9; padding:8px;">₹${amountReceived}</td>
       </tr>
@@ -116,16 +116,16 @@
         </div>
         <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
           <div style="flex:1;">
-            <p style="margin:0;"><strong>INVOICE NO:</strong> ${invoiceNumber}</p>
-            <p style="margin:5px 0 0 0;"><strong>PATIENT ID:</strong> ${customer.id}</p>
+            <p style="margin:0;"><strong>INVOICE NO:</strong> ${escapeHtml(invoiceNumber)}</p>
+            <p style="margin:5px 0 0 0;"><strong>PATIENT ID:</strong> ${escapeHtml(customer.id)}</p>
             <p style="margin:5px 0 0 0;"><strong>DATE:</strong> ${formatDMY(data.invoiceDate)}</p>
           </div>
           <div style="flex:1; text-align:right;">
             <p style="margin:0; font-weight:bold;">BILL TO:</p>
-            <p style="margin:0; font-weight:bold;">${customer.name}</p>
-            <p style="margin:0; font-size:0.9em;"><strong>Age:</strong> ${customer.age} &nbsp;|&nbsp; <strong>Sex:</strong> ${customer.sex}</p>
-            <p style="margin:0; font-size:0.9em;">Ph: ${customer.phone}</p>
-            <p style="margin:0; font-size:0.9em;">Addr: ${customer.address}</p>
+            <p style="margin:0; font-weight:bold;">${escapeHtml(customer.name)}</p>
+            <p style="margin:0; font-size:0.9em;"><strong>Age:</strong> ${escapeHtml(customer.age)} &nbsp;|&nbsp; <strong>Sex:</strong> ${escapeHtml(customer.sex)}</p>
+            <p style="margin:0; font-size:0.9em;">Ph: ${escapeHtml(customer.phone)}</p>
+            <p style="margin:0; font-size:0.9em;">Addr: ${escapeHtml(customer.address)}</p>
           </div>
         </div>
         <table class="invoice-table" style="width:100%; border-collapse:collapse; margin-top:20px;">
@@ -207,4 +207,3 @@
       .limit(300);
     acctAllClearances = (!error && data) ? data : [];
   }
-
