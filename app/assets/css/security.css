@@ -1,0 +1,13 @@
+/* ---------- Boss-only UI (hidden for everybody else; the database enforces it too) ---------- */
+body:not(.is-boss) .boss-only{ display:none !important; }
+
+#bossResetModal, #pwReqModal{ z-index:99990; }   /* below the attendance gate, above the app */
+
+.boss-act{ width:auto; padding:6px 10px; font-size:12px; }
+.boss-actions{ display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
+.pw-shown{
+  font-family:var(--font-mono); font-size:18px; letter-spacing:.04em; padding:12px 14px;
+  background:var(--amber-soft); border:1px dashed var(--amber); border-radius:8px; user-select:all; word-break:break-all;
+}
+.req-row{ display:flex; justify-content:space-between; align-items:center; gap:12px; padding:10px 0; border-top:1px solid var(--rule); font-size:14px; }
+.req-row:first-child{ border-top:none; }
