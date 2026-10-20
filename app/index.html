@@ -17,6 +17,7 @@
 <link rel="stylesheet" href="assets/css/invoice.css">
 <link rel="stylesheet" href="assets/css/accounts.css">
 <link rel="stylesheet" href="assets/css/attendance.css">
+<link rel="stylesheet" href="assets/css/security.css">
 </head>
 <body>
 
@@ -49,8 +50,8 @@
   <div class="dash-header">
     <div>
       <div class="greeting-eyebrow">Signed in as</div>
-      <div class="greeting">Admin</div>
-      <div class="mini-clock">
+      <div class="greeting" id="adminGreeting">Admin</div>
+      <div class="mini-clock" id="admClockWrap">
         <div class="status-tag" id="admStatusTag"><span class="status-dot"></span><span id="admStatusText">Off shift</span></div>
         <div class="timer idle" id="admTimer">00:00:00</div>
         <button class="punch-btn in" id="admPunchBtn">Check In</button>
@@ -67,6 +68,7 @@
     <button class="tab-btn" data-tab="admin-customers">Customers</button>
     <button class="tab-btn" data-tab="admin-inventory">Inventory</button>
     <button class="tab-btn" data-tab="admin-tools">Tools</button>
+    <button class="tab-btn boss-only" data-tab="admin-security">Users &amp; Security</button>
   </div>
 
   <!-- Dashboard -->
@@ -96,7 +98,7 @@
 
   <!-- Employee Management -->
   <div class="tab-panel" id="tab-admin-employees">
-    <div class="panel">
+    <div class="panel" style="display:none;"><!-- old form hidden: accounts are now created from the Boss tab "Users & Security" -->
       <div class="panel-title">Create employee</div>
       <div class="msg" id="empMsg"></div>
       <div class="form-row">
@@ -136,6 +138,50 @@
           <tfoot id="empAttendanceFooter"></tfoot>
         </table>
       </div>
+    </div>
+  </div>
+
+  <!-- Users & Security (boss only) -->
+  <div class="tab-panel boss-only" id="tab-admin-security">
+    <div class="panel">
+      <div class="panel-title">Create account</div>
+      <div class="msg" id="bossCreateMsg"></div>
+      <div class="form-row">
+        <div class="field"><label>Type</label>
+          <select class="field-select" id="bossNewKind"><option value="employee">Employee</option><option value="admin">Admin</option></select>
+        </div>
+        <div class="field"><label>Name</label><input id="bossNewName" type="text" placeholder="Full name" /></div>
+      </div>
+      <div class="form-row">
+        <div class="field"><label>Username</label><input id="bossNewUsername" type="text" autocomplete="off" /></div>
+        <div class="field"><label>Password (min 8)</label><input id="bossNewPassword" type="text" autocomplete="off" /></div>
+      </div>
+      <button class="btn moss" id="bossCreateBtn">Create account</button>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header-row">
+        <div class="panel-title" style="margin-bottom:0;">Accounts</div>
+        <button class="btn ghost btn-sm" id="bossAskAllBtn">Ask everyone to change password</button>
+      </div>
+      <div class="msg" id="bossUsersMsg"></div>
+      <div id="bossUserList"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Password change requests</div>
+      <div id="bossRequestList"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">My password</div>
+      <div class="msg" id="bossPwMsg"></div>
+      <div class="form-row">
+        <div class="field"><label>Current password</label><input id="bossPwCurrent" type="password" autocomplete="current-password" /></div>
+        <div class="field"><label>New password (min 8)</label><input id="bossPwNew" type="password" autocomplete="new-password" /></div>
+        <div class="field"><label>Confirm new password</label><input id="bossPwConfirm" type="password" autocomplete="new-password" /></div>
+      </div>
+      <button class="btn moss" id="bossPwBtn">Change my password</button>
     </div>
   </div>
 
@@ -1122,6 +1168,42 @@
 
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<!-- Boss: reset-password dialog (the new password is shown only once) -->
+<div class="modal-overlay" id="bossResetModal">
+  <div class="modal-card">
+    <div class="modal-title" id="bossResetTitle">Reset password</div>
+    <div class="msg" id="bossResetMsg"></div>
+    <div id="bossResetForm">
+      <div class="field"><label>New password (min 8)</label><input id="bossResetPassword" type="text" autocomplete="off" /></div>
+      <button class="btn ghost btn-sm" id="bossResetGenerate" type="button">Generate one</button>
+    </div>
+    <div id="bossResetShown" style="display:none;">
+      <div class="cust-meta" style="margin-bottom:8px;">Tell this to the user. It will not be shown again. They will be asked to set their own password at login.</div>
+      <div class="pw-shown" id="bossResetValue"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost" id="bossResetCancel" type="button">Cancel</button>
+      <button class="btn moss" id="bossResetConfirm" type="button">Set password</button>
+    </div>
+  </div>
+</div>
+
+<!-- Password-change popup for a user who was asked to change it -->
+<div class="modal-overlay" id="pwReqModal">
+  <div class="modal-card">
+    <div class="modal-title">Change your password</div>
+    <div class="msg" id="pwReqNote"></div>
+    <div class="msg" id="pwReqMsg"></div>
+    <div class="field"><label>Current password</label><input id="pwReqCurrent" type="password" autocomplete="current-password" /></div>
+    <div class="field"><label>New password (min 8)</label><input id="pwReqNew" type="password" autocomplete="new-password" /></div>
+    <div class="field"><label>Confirm new password</label><input id="pwReqConfirm" type="password" autocomplete="new-password" /></div>
+    <div class="modal-actions">
+      <button class="btn ghost" id="pwReqLater" type="button">Later</button>
+      <button class="btn moss" id="pwReqSave" type="button">Change password</button>
+    </div>
+  </div>
+</div>
+
 <!-- ATTENDANCE GATE (forced check-in / 4-hour reminder). Black & white, no close button. -->
 <div class="att-overlay" id="attGate" role="dialog" aria-modal="true" aria-labelledby="attGateTitle">
   <div class="att-box">
@@ -1145,6 +1227,7 @@
 <script src="assets/js/services/packages.js"></script>
 <script src="assets/js/employee/employee-timer.js"></script>
 <script src="assets/js/employee/attendance.js"></script>
+<script src="assets/js/security/user-management.js"></script>
 <script src="assets/js/customer/customer-registration.js"></script>
 <script src="assets/js/dashboard/accounts-summary-card.js"></script>
 <script src="assets/js/customer/patient-id-autosuggest.js"></script>
