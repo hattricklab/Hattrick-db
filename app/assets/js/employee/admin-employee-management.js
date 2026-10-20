@@ -95,7 +95,7 @@
 
     const { data, error } = await sb
       .from('checkins')
-      .select('id, check_in, check_out, duration_seconds')
+      .select('id, check_in, check_out, duration_seconds, forgot_checkout')
       .eq('employee_id', empAttendanceEmployeeId)
       .gte('check_in', rangeStart)
       .lt('check_in', rangeEnd)
@@ -115,7 +115,7 @@
         <tr>
           <td>${formatDMY(d)}</td>
           <td class="cust-meta">${inTime}</td>
-          <td class="cust-meta">${outTime}</td>
+          <td class="cust-meta">${outTime}${row.forgot_checkout ? ' <span style="color:var(--red); font-weight:600;">(forgot to check out)</span>' : ''}</td>
           <td class="cust-meta">${row.check_out ? empFormatDuration(row.duration_seconds) : '(on shift)'}</td>
         </tr>`;
     }).join('');
