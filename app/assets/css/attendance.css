@@ -1,0 +1,35 @@
+/* ---------- Attendance gate: full-screen black & white, cannot be dismissed ---------- */
+.att-overlay{
+  position:fixed; inset:0; z-index:100000; display:none; align-items:center; justify-content:center;
+  padding:24px; background:#fff; color:#000; font-family:var(--font-body);
+}
+.att-overlay *{ outline-color:#000; }
+.att-box{ width:100%; max-width:440px; text-align:center; }
+.att-eyebrow{
+  display:inline-block; font-family:var(--font-mono); font-size:12px; letter-spacing:.16em; text-transform:uppercase;
+  padding-bottom:6px; margin-bottom:22px; border-bottom:2px solid #000;
+}
+.att-title{ font-family:var(--font-display); font-weight:600; font-size:30px; letter-spacing:-.02em; margin-bottom:12px; }
+.att-text{ font-size:15px; line-height:1.6; color:#222; margin-bottom:28px; }
+.att-btn{
+  display:block; width:100%; padding:15px 18px; margin-bottom:12px; font-family:inherit; font-size:15px; font-weight:600;
+  border:2px solid #000; border-radius:10px; cursor:pointer;
+}
+.att-btn-primary{ background:#000; color:#fff; }
+.att-btn-secondary{ background:#fff; color:#000; }
+.att-btn:disabled{ opacity:.45; cursor:not-allowed; }
+.att-msg{ min-height:20px; margin-top:4px; font-size:13px; color:#000; }
+
+/* ---------- Admin dashboard: attendance card ---------- */
+.att-card{ margin-top:20px; background:var(--panel); border:1px solid var(--rule); border-radius:14px; padding:18px 20px; }
+.att-card-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+.att-card-title{ font-family:var(--font-mono); font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-dim); }
+.att-row{ display:flex; justify-content:space-between; align-items:center; gap:14px; padding:10px 0; border-top:1px solid var(--rule); }
+.att-row:first-child{ border-top:none; }
+.att-name{ font-weight:600; }
+.att-kind{ font-family:var(--font-mono); font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-dim); margin-left:6px; }
+.att-sub{ font-size:12px; color:var(--ink-dim); }
+.att-badge{ font-size:12px; font-weight:600; padding:4px 10px; border-radius:999px; white-space:nowrap; text-align:right; }
+.att-badge.ok{ background:#e7f1e5; color:var(--moss); }
+.att-badge.amber{ background:var(--amber-soft); color:var(--amber); }
+.att-badge.red{ background:#f8e2dc; color:var(--red); }
