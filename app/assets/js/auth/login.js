@@ -6,6 +6,7 @@
 
   let currentEmployee = null;
   let currentAdmin = null;
+  let appIsBoss = false;   // UI only; the database enforces boss-only actions
   let syncInvInvoiceDate = () => {};
   let syncAcctFilterDate = () => {};
   let syncExpDate = () => {};
@@ -29,10 +30,15 @@
     if (adminMatch){
       setAppSessionToken(adminMatch.token);
       currentAdmin = adminMatch;
+      appIsBoss = adminMatch.role === 'boss';
+      document.body.classList.toggle('is-boss', appIsBoss);
+      document.getElementById('adminGreeting').textContent = appIsBoss ? 'Boss' : 'Admin';
       usernameInput.value = ''; passwordInput.value = '';
       showScreen('admin');
       startIdleWatch();
-      attInit({ kind: 'admin', id: adminMatch.id, name: adminMatch.name || adminMatch.username });
+      // Boss has no check-in rules; admins and employees do.
+      attInit({ kind: appIsBoss ? 'boss' : 'admin', id: adminMatch.id, name: adminMatch.name || adminMatch.username });
+      pwCheckPending();
       await Promise.allSettled([
         loadEmployees(),
         loadServices(),
@@ -67,6 +73,7 @@
     showScreen('employee');
     startIdleWatch();
     await loadOpenSession();
+    pwCheckPending();
     await Promise.allSettled([
       loadHistory(),
       loadCustomers(),
