@@ -1,4 +1,4 @@
-  // ---------- Employee: timer ----------
+// ---------- Employee: timer ----------
   const statusTag = document.getElementById('statusTag');
   const statusText = document.getElementById('statusText');
   const timerEl = document.getElementById('timer');
@@ -39,16 +39,8 @@
   }
 
   async function loadOpenSession(){
-    const { data, error } = await sb
-      .from('checkins')
-      .select('id, check_in')
-      .eq('employee_id', currentEmployee.id)
-      .is('check_out', null)
-      .order('check_in', { ascending: false })
-      .limit(1);
-
-    openSession = (!error && data && data.length > 0) ? data[0] : null;
-    renderTimer();
+    // Attendance module loads the open session and shows the forced check-in popup if needed.
+    await attInit({ kind: 'employee', id: currentEmployee.id, name: currentEmployee.name || currentEmployee.username });
   }
 
   async function loadHistory(){
@@ -84,21 +76,10 @@
   punchBtn.addEventListener('click', async () => {
     punchBtn.disabled = true;
     if (!openSession){
-      const { data, error } = await sb
-        .from('checkins')
-        .insert({ employee_id: currentEmployee.id, check_in: new Date().toISOString() })
-        .select('id, check_in')
-        .single();
-      if (!error && data){ openSession = data; renderTimer(); }
+      await attPunchIn();
     } else {
-      const checkOutTime = new Date();
-      const durationSec = Math.round((checkOutTime.getTime() - new Date(openSession.check_in).getTime()) / 1000);
-      const { error } = await sb
-        .from('checkins')
-        .update({ check_out: checkOutTime.toISOString(), duration_seconds: durationSec })
-        .eq('id', openSession.id);
-      if (!error){ openSession = null; renderTimer(); await loadHistory(); }
+      const r = await attPunchOut();
+      if (r && r.ok) await loadHistory();
     }
     punchBtn.disabled = false;
   });
-
