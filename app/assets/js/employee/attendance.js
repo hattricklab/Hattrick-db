@@ -1,4 +1,4 @@
-  // ---------- Attendance: forced check-in, reminders, heartbeat, admin overview ----------
+// ---------- Attendance: forced check-in, reminders, heartbeat, admin overview ----------
   // Works for both employees (checkins.employee_id) and admins (checkins.admin_id).
   const ATT_STALE_MS = 14 * 3600 * 1000;      // open session older than this = "forgot to check out"
   const ATT_LIMIT_MS = 4 * 3600 * 1000;       // reminder starts after 4 hours
@@ -195,6 +195,14 @@
   async function attInit(actor){
     attStop();
     attActor = actor;
+    if (actor.kind === 'boss'){
+      // The boss has no check-in rules: no popup, no timer, no heartbeat. Only the overview card.
+      const wrap = document.getElementById('admClockWrap');
+      if (wrap) wrap.style.display = 'none';
+      attLoadDashboard();
+      attStartDashRefresh();
+      return;
+    }
     const res = await attFetchOpenSession();
     if (res.error){ attShowGate('error'); return; }
     attSession = res.session;
@@ -211,11 +219,15 @@
     attWatchHandle = setInterval(attWatchTick, 30 * 1000);
     if (actor.kind === 'admin'){
       attClockHandle = setInterval(attRenderAdminWidget, 1000);
-      attDashHandle = setInterval(() => {
-        const panel = document.getElementById('tab-admin-dashboard');
-        if (panel && panel.classList.contains('active')) attLoadDashboard();
-      }, ATT_DASH_REFRESH_MS);
+      attStartDashRefresh();
     }
+  }
+
+  function attStartDashRefresh(){
+    attDashHandle = setInterval(() => {
+      const panel = document.getElementById('tab-admin-dashboard');
+      if (panel && panel.classList.contains('active')) attLoadDashboard();
+    }, ATT_DASH_REFRESH_MS);
   }
 
   function attStop(){
