@@ -5,6 +5,7 @@
   const authMsg = document.getElementById('authMsg');
 
   let currentEmployee = null;
+  let currentAdmin = null;
   let syncInvInvoiceDate = () => {};
   let syncAcctFilterDate = () => {};
   let syncExpDate = () => {};
@@ -27,9 +28,11 @@
 
     if (adminMatch){
       setAppSessionToken(adminMatch.token);
+      currentAdmin = adminMatch;
       usernameInput.value = ''; passwordInput.value = '';
       showScreen('admin');
       startIdleWatch();
+      attInit({ kind: 'admin', id: adminMatch.id, name: adminMatch.name || adminMatch.username });
       await Promise.allSettled([
         loadEmployees(),
         loadServices(),
@@ -90,6 +93,11 @@
     try {
       if (reason === 'idle') sessionStorage.setItem(IDLE_FLAG_KEY, '1');
     } catch (e) { /* storage unavailable: ignore */ }
+    // Idle logout leaves the check-in OPEN (no auto check-out) but records it for the admin.
+    if (reason === 'idle'){
+      try { await Promise.race([attMarkIdleLogout(), new Promise(r => setTimeout(r, 2000))]); } catch (e) { /* ignore */ }
+    }
+    attStop();
     showScreen('auth');
     // Invalidate the session on the server (best effort, max 2s), then wipe memory.
     try {
