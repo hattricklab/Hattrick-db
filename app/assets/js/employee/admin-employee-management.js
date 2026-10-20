@@ -20,7 +20,7 @@
         </div>
         <div>
           <button class="btn ghost btn-sm emp-attendance-btn" data-id="${e.id}" data-name="${escapeHtml(e.name || e.username)}" style="margin-right:10px;">Attendance</button>
-          <button class="emp-del" data-id="${e.id}" data-active="${e.active}" style="color:${e.active === false ? 'var(--moss)' : 'var(--red)'};">${e.active === false ? 'Restore' : 'Archive'}</button>
+          ${appIsBoss ? `<button class="emp-del" data-id="${e.id}" data-active="${e.active}" style="color:${e.active === false ? 'var(--moss)' : 'var(--red)'};">${e.active === false ? 'Restore' : 'Archive'}</button>` : ''}
         </div>
       </div>
     `).join('');
