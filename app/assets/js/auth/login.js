@@ -77,7 +77,7 @@
   // ---------- Logout & idle timeout ----------
   // Logout reloads the page so ALL in-memory data (ledger, customers, invoices,
   // DOM contents) is discarded. Hiding the screen alone left everything readable.
-  const IDLE_LOGOUT_MS = 20 * 60 * 1000;   // 20 minutes without activity
+  const IDLE_LOGOUT_MS = 60 * 60 * 1000;   // 1 hour without activity
   const IDLE_FLAG_KEY = 'hm_idle_logout';
   let idleTimer = null;
   let idleListenersAttached = false;
