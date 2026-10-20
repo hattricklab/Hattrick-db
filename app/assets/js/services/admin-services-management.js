@@ -116,7 +116,7 @@
           <button class="svc-visibility-toggle" data-id="${s.id}" data-visible="${s.visible_external !== false}" title="${s.visible_external !== false ? 'Visible on linked website — click to hide' : 'Hidden from linked website — click to show'}" style="background:none; border:none; cursor:pointer; font-size:18px; color:${s.visible_external !== false ? 'var(--moss)' : 'var(--red)'}; text-decoration:${s.visible_external !== false ? 'none' : 'line-through'};">👁</button>
         </td>
         <td style="text-align:right; white-space:nowrap;">
-          <button class="emp-del svc-edit" data-id="${s.id}" data-name="${escapeHtml(s.name)}" data-price="${s.price}" data-categories='${escapeHtml(JSON.stringify(Array.isArray(s.categories) ? s.categories : []))}' style="color:var(--moss); margin-right:14px;">Edit</button>
+          <button class="emp-del svc-edit" data-id="${s.id}" data-name="${escapeHtml(s.name)}" data-price="${escapeHtml(s.price)}" data-categories='${escapeHtml(JSON.stringify(Array.isArray(s.categories) ? s.categories : []))}' style="color:var(--moss); margin-right:14px;">Edit</button>
           <button class="emp-del svc-del" data-id="${s.id}" data-active="${s.active}" style="color:${s.active === false ? 'var(--moss)' : 'var(--red)'};">${s.active === false ? 'Restore' : 'Archive'}</button>
         </td>
       </tr>`;
