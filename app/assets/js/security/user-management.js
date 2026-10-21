@@ -95,7 +95,6 @@
           <div class="emp-username">${escapeHtml(u.username)}</div>
         </div>
         <div class="boss-actions">
-          <button class="btn ghost boss-act" data-act="att" data-kind="${u.kind}" data-id="${u.id}" data-name="${escapeHtml(u.name || u.username)}">Attendance</button>
           <button class="btn ghost boss-act" data-act="reset" data-kind="${u.kind}" data-id="${u.id}" data-name="${escapeHtml(u.name || u.username)}">Reset password</button>
           <button class="btn ghost boss-act" data-act="ask" data-kind="${u.kind}" data-id="${u.id}" data-name="${escapeHtml(u.name || u.username)}">Ask to change</button>
           <button class="btn ${u.active ? 'red' : 'moss'} boss-act" data-act="toggle" data-kind="${u.kind}" data-id="${u.id}" data-active="${u.active}" data-name="${escapeHtml(u.name || u.username)}">${u.active ? 'Deactivate' : 'Reactivate'}</button>
@@ -107,7 +106,6 @@
     const btn = e.target.closest('button[data-act]');
     if (!btn) return;
     const { act, kind, id, name } = btn.dataset;
-    if (act === 'att') bossShowAttendance(kind, id, name);
     if (act === 'reset') bossOpenReset(kind, id, name);
     if (act === 'ask') bossAsk('one', kind, id, name);
     if (act === 'toggle') bossToggle(kind, id, btn.dataset.active === 'true', name);
@@ -183,46 +181,6 @@
     bossResetCancel.textContent = 'Close';
     bossRefresh();
   });
-
-  // ----- Boss: attendance history of one employee / admin -----
-  async function bossShowAttendance(kind, id, name){
-    document.getElementById('bossAttTitle').textContent = 'Attendance: ' + name + (kind === 'admin' ? ' (Admin)' : '');
-    const body = document.getElementById('bossAttBody');
-    const summary = document.getElementById('bossAttSummary');
-    body.innerHTML = '<div class="empty">Loading...</div>';
-    summary.textContent = '';
-    openModal('bossAttModal');
-
-    const col = kind === 'admin' ? 'admin_id' : 'employee_id';
-    const { data, error } = await sb.from('checkins')
-      .select('check_in, check_out, duration_seconds, forgot_checkout, idle_logout_at')
-      .eq(col, id).order('check_in', { ascending: false }).limit(60);
-    if (error){ body.innerHTML = '<div class="empty">Could not load attendance.</div>'; return; }
-    if (!data || !data.length){ body.innerHTML = '<div class="empty">No attendance records yet.</div>'; return; }
-
-    const tm = v => new Date(v).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-    const dur = sec => { const m = Math.max(0, Math.round(sec / 60)); return `${Math.floor(m / 60)}h ${m % 60}m`; };
-    let totalSec = 0;
-    body.innerHTML = data.map(r => {
-      const open = !r.check_out;
-      if (!open) totalSec += (r.duration_seconds || 0);
-      const durText = open ? dur((Date.now() - new Date(r.check_in).getTime()) / 1000) : dur(r.duration_seconds || 0);
-      const flags = [];
-      if (open) flags.push('<span class="att-badge amber">On shift / not checked out</span>');
-      if (r.forgot_checkout) flags.push('<span class="att-badge red">Forgot to check out</span>');
-      if (r.idle_logout_at) flags.push(`<span class="att-badge amber">Idle logout ${tm(r.idle_logout_at)}</span>`);
-      return `
-        <div class="req-row">
-          <div>
-            <div class="emp-name">${formatDMY(new Date(r.check_in))}</div>
-            <div class="att-sub">In ${tm(r.check_in)} &rarr; Out ${open ? '-' : tm(r.check_out)} &middot; ${durText}</div>
-          </div>
-          <div style="display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end;">${flags.join('')}</div>
-        </div>`;
-    }).join('');
-    summary.textContent = `Last ${data.length} session(s). Total of completed sessions: ${dur(totalSec)}`;
-  }
-  document.getElementById('bossAttClose').addEventListener('click', () => closeModal('bossAttModal'));
 
   // ----- Boss: request list (pending / done) -----
   async function bossLoadRequests(){
