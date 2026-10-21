@@ -6,9 +6,21 @@
       container.innerHTML = '<p class="empty">No matching services found.</p>';
       return;
     }
+    // test id -> names of the (active) packages that already include it
+    const packagesByTest = new Map();
+    (invAllPackages || []).forEach(pkg => {
+      (pkg.test_ids || []).forEach(rawId => {
+        const id = Number(rawId);
+        if (!packagesByTest.has(id)) packagesByTest.set(id, []);
+        packagesByTest.get(id).push(pkg.name);
+      });
+    });
+
     testsToDisplay.forEach(test => {
       const itemDiv = document.createElement('div');
       itemDiv.className = 'inv-service-item';
+      const inPackages = packagesByTest.get(Number(test.id)) || [];
+      if (inPackages.length) itemDiv.style.borderLeft = '3px solid #5b4bb7';
       const isChecked = invSelectedTests.some(t => t.id === test.id);
 
       const checkbox = document.createElement('input');
@@ -26,6 +38,16 @@
       label.style.fontWeight = '400';
       label.style.cursor = 'pointer';
 
+      // Purple chip: this test is already included in one or more packages.
+      let pkgChip = null;
+      if (inPackages.length){
+        pkgChip = document.createElement('span');
+        pkgChip.textContent = inPackages.length === 1 ? 'In package' : `In ${inPackages.length} packages`;
+        pkgChip.title = 'Already included in: ' + inPackages.join(', ');
+        pkgChip.style.cssText = 'background:#efecfb; color:#5b4bb7; border:1px solid #cfc8f2; border-radius:999px; '
+          + 'font-size:10px; font-weight:600; letter-spacing:.03em; padding:2px 8px; margin-right:10px; white-space:nowrap; cursor:help;';
+      }
+
       const eyeSpan = document.createElement('span');
       const isVisible = test.visible_external !== false;
       eyeSpan.textContent = '👁';
@@ -41,6 +63,7 @@
 
       itemDiv.appendChild(checkbox);
       itemDiv.appendChild(label);
+      if (pkgChip) itemDiv.appendChild(pkgChip);
       itemDiv.appendChild(eyeSpan);
       itemDiv.appendChild(priceSpan);
       container.appendChild(itemDiv);
