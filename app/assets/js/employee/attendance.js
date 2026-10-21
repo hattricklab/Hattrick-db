@@ -57,7 +57,15 @@
     if (error) return { ok: false, error };
     attSession = null;
     attAfterSessionChange();
+    attLogoutAfterCheckout();
     return { ok: true };
+  }
+
+  // Checking out ends the day: show a short "checked out" screen, then log out.
+  function attLogoutAfterCheckout(){
+    if (!attActor || (attActor.kind !== 'employee' && attActor.kind !== 'admin')) return;
+    attShowGate('bye');
+    setTimeout(() => { doLogout(); }, 1500);
   }
 
   // Close an old, never-checked-out session at the last time we saw the person active.
@@ -106,6 +114,9 @@
       cfg = { title: 'Time to check out?',
               text: `You have been checked in for ${attFmtDur(elapsed)}. Please check out when you finish your shift.`,
               p: ['Check out now', attGateCheckOut], s: ['Remind me in 30 min', attGateSnooze] };
+    } else if (mode === 'bye'){
+      cfg = { title: 'Checked out', text: `Thanks ${name}. You are checked out. Logging you out now...`,
+              p: ['', null], s: ['', null] };
     } else {
       cfg = { title: "Couldn't load attendance", text: extra || 'Check your internet connection and try again.',
               p: ['Retry', attGateRetry], s: ['Log out', attGateLogout] };
@@ -118,6 +129,9 @@
     attGateMsg.textContent = '';
     attGatePrimary.disabled = false;
     attGateSecondary.disabled = false;
+    const showButtons = mode !== 'bye';
+    attGatePrimary.style.display = showButtons ? '' : 'none';
+    attGateSecondary.style.display = showButtons ? '' : 'none';
     attGate.style.display = 'flex';
   }
 
@@ -161,8 +175,7 @@
   async function attGateCheckOut(){
     const r = await attPunchOut();
     if (!r.ok){ attGateMsg.textContent = ATT_SAVE_FAIL; return; }
-    attHideGate();
-    if (attActor && attActor.kind === 'employee' && typeof loadHistory === 'function') loadHistory();
+    // attPunchOut already switched to the "Checked out" screen and will log out.
   }
   async function attGateSnooze(){
     attNextReminderAt = Date.now() + ATT_SNOOZE_MS;
