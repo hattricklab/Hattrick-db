@@ -167,6 +167,7 @@
       const { data, error } = await query;
       allRows = (!error && data) ? data : [];
       applyFilter();
+      if (typeof invRefreshCustomers === 'function') invRefreshCustomers();
     }
 
     let searchDebounceHandle = null;
