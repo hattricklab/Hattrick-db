@@ -2,7 +2,33 @@
   const empMsg = document.getElementById('empMsg');
   const empList = document.getElementById('empList');
 
+  // Boss only: admins are listed under the employees, with the same Attendance view.
+  async function loadBossAdmins(){
+    const list = document.getElementById('empAdminList');
+    if (!list || !appIsBoss) return;
+    const showArchived = document.getElementById('empShowArchived').checked;
+    const { data, error } = await sb.rpc('boss_list_users');
+    if (error){ list.innerHTML = '<div class="empty">Could not load admins.</div>'; return; }
+    const admins = (data || []).filter(u => u.kind === 'admin' && (showArchived || u.active));
+    if (!admins.length){ list.innerHTML = '<div class="empty">No admins.</div>'; return; }
+    list.innerHTML = admins.map(a => `
+      <div class="emp-row">
+        <div>
+          <div class="emp-name">${escapeHtml(a.name) || '(no name)'} ${a.active === false ? '<span class="cust-meta" style="color:var(--red);">(deactivated)</span>' : ''}</div>
+          <div class="emp-username">${escapeHtml(a.username)}</div>
+        </div>
+        <div>
+          <button class="btn ghost btn-sm emp-admin-attendance-btn" data-id="${a.id}" data-name="${escapeHtml(a.name || a.username)}">Attendance</button>
+        </div>
+      </div>
+    `).join('');
+    list.querySelectorAll('.emp-admin-attendance-btn').forEach(btn => {
+      btn.addEventListener('click', () => empShowAttendance(btn.dataset.id, btn.dataset.name, 'admin'));
+    });
+  }
+
   async function loadEmployees(){
+    loadBossAdmins();
     const showArchived = document.getElementById('empShowArchived').checked;
     let query = sb.from('employees').select('*').order('created_at', { ascending: false });
     query = showArchived ? query : query.eq('active', true);
@@ -42,6 +68,7 @@
 
   // ---------- Attendance (per-employee, filtered by month) ----------
   let empAttendanceEmployeeId = null;
+  let empAttendanceKind = 'employee';   // 'employee' or 'admin' (admins are viewable by the boss only)
   const EMP_MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
   function empPopulateAttendanceDropdowns(){
@@ -59,9 +86,10 @@
     monthSel.dataset.populated = 'true';
   }
 
-  function empShowAttendance(employeeId, employeeName){
+  function empShowAttendance(employeeId, employeeName, kind = 'employee'){
     empAttendanceEmployeeId = employeeId;
-    document.getElementById('empAttendanceName').textContent = employeeName;
+    empAttendanceKind = kind;
+    document.getElementById('empAttendanceName').textContent = employeeName + (kind === 'admin' ? ' (Admin)' : '');
     document.getElementById('empAttendancePanel').style.display = 'block';
     empPopulateAttendanceDropdowns();
     const now = new Date();
@@ -96,7 +124,7 @@
     const { data, error } = await sb
       .from('checkins')
       .select('id, check_in, check_out, duration_seconds, forgot_checkout')
-      .eq('employee_id', empAttendanceEmployeeId)
+      .eq(empAttendanceKind === 'admin' ? 'admin_id' : 'employee_id', empAttendanceEmployeeId)
       .gte('check_in', rangeStart)
       .lt('check_in', rangeEnd)
       .order('check_in', { ascending: false });
