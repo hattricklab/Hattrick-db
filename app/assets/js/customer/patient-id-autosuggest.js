@@ -174,6 +174,14 @@
     { id: 102, name: 'LIVER FUNCTION TEST (LFT)', price: 900.00 }
   ];
 
+  // Re-reads ONLY the customer list used by the invoice generator, so a newly added /
+  // edited / archived customer shows up without logging out and in again.
+  async function invRefreshCustomers(){
+    const { data, error } = await sb.from('customers').select('*').order('name', { ascending: true });
+    if (error || !data) return;                       // keep the current list if the read fails
+    invAllCustomers = data.length > 0 ? data : INV_DEFAULT_CUSTOMERS;
+  }
+
   async function invLoadInitialData(){
     // Logo is embedded as base64, so this is instant — no network wait.
     const logoImg = document.getElementById('invLogoDisplay');
