@@ -122,6 +122,13 @@
       <div id="empList"></div>
     </div>
 
+    <div class="panel boss-only">
+      <div class="panel-header-row">
+        <div class="panel-title" style="margin-bottom:0;">Admins</div>
+      </div>
+      <div id="empAdminList"></div>
+    </div>
+
     <div class="panel" id="empAttendancePanel" style="display:none;">
       <div class="panel-header-row">
         <div class="panel-title" style="margin-bottom:0;">Attendance — <span id="empAttendanceName"></span></div>
@@ -1185,16 +1192,6 @@
       <button class="btn ghost" id="bossResetCancel" type="button">Cancel</button>
       <button class="btn moss" id="bossResetConfirm" type="button">Set password</button>
     </div>
-  </div>
-</div>
-
-<!-- Boss: attendance history of one employee/admin -->
-<div class="modal-overlay" id="bossAttModal">
-  <div class="modal-card" style="max-width:640px;">
-    <div class="modal-title" id="bossAttTitle">Attendance</div>
-    <div class="cust-meta" id="bossAttSummary" style="margin-bottom:10px;"></div>
-    <div id="bossAttBody" style="max-height:50vh; overflow:auto;"></div>
-    <div class="modal-actions"><button class="btn ghost" id="bossAttClose" type="button">Close</button></div>
   </div>
 </div>
 
