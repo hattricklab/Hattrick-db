@@ -15,9 +15,50 @@
   display:block; width:100%; padding:15px 18px; margin-bottom:12px; font-family:inherit; font-size:15px; font-weight:600;
   border:2px solid #000; border-radius:10px; cursor:pointer;
 }
-.att-btn-primary{ background:#000; color:#fff; }
-.att-btn-secondary{ background:#fff; color:#000; }
-.att-btn:disabled{ opacity:.45; cursor:not-allowed; }
+.att-btn-primary {
+  background: #16803c;
+  color: #fff;
+  border: 2px solid #16803c;
+  box-shadow: 0 4px 12px rgba(22, 128, 60, 0.18);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  animation: checkInPulse 2s ease-in-out infinite;
+}
+
+.att-btn-primary:hover:not(:disabled) {
+  background: #116b32;
+  box-shadow: 0 6px 18px rgba(22, 128, 60, 0.3);
+  transform: translateY(-2px);
+}
+
+.att-btn-primary:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.att-btn-secondary {
+  background: #fff;
+  color: #000;
+}
+
+.att-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+@keyframes checkInPulse {
+  0%, 100% {
+    box-shadow: 0 4px 12px rgba(22, 128, 60, 0.18);
+  }
+  50% {
+    box-shadow: 0 4px 20px rgba(22, 128, 60, 0.4);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .att-btn-primary {
+    animation: none;
+    transition: none;
+  }
+}
 .att-msg{ min-height:20px; margin-top:4px; font-size:13px; color:#000; }
 
 /* ---------- Admin dashboard: attendance card ---------- */
