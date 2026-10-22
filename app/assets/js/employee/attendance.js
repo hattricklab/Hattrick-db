@@ -136,9 +136,12 @@
   }
 
   function attHideGate(){
+    const previousMode = attGateMode;
     attGateMode = null;
     attGateActions = { primary: null, secondary: null };
     attGate.style.display = 'none';
+    // After check-in, the Today's Tasks list floats in (employees only; ignored otherwise).
+    if (previousMode && typeof taskOnGateClosed === 'function') taskOnGateClosed(previousMode);
   }
 
   async function attRunGate(which){
