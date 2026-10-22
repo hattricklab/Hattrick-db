@@ -1,4 +1,4 @@
-  // ---------- Employee: Today's Tasks (calm list, pending, request a help) ----------
+// ---------- Employee: Today's Tasks (calm list, pending, request a help) ----------
   const TASK_CHEERS = [
     'Wonderful, {n}! One more done', 'Nicely done, {n}!', 'You are on a roll, {n}!',
     'Lovely work, {n}. Keep going', 'That is how it is done, {n}!', 'Smooth and steady, {n}. Great job!'
@@ -13,6 +13,8 @@
   let taskItems = [];        // task_list_mine rows
   let taskRequests = [];     // task_my_requests rows
   let taskAdmins = [];       // admins I can ask for help
+  let taskLeaves = [];       // my leave requests
+  let taskLeaveSeen = null;  // leave id -> last known status (to tell me when a decision arrives)
   let taskSub = 'today';
   let taskToastTimer = null;
   let taskAllDoneShown = false;
@@ -174,25 +176,17 @@
   // ----- Request a help (employee -> admin) -----
   const TASK_REQ_STATUS = { pending: 'Waiting for admin', waiting: 'Waiting for admin', done: 'Done', cancelled: 'Cancelled' };
 
-  function taskRenderRequests(){
-    const sel = taskEl('tkReqAdmin');
-    const keep = sel.value;
-    sel.innerHTML = taskAdmins.length
-      ? taskAdmins.map(a => `<option value="${a.id}">${escapeHtml(a.name)}</option>`).join('')
-      : '<option value="">No admin available</option>';
-    if (keep && taskAdmins.some(a => a.id === keep)) sel.value = keep;
+  const TASK_LEAVE_TYPE = { casual: 'Casual leave', sick: 'Sick leave', emergency: 'Emergency leave', other: 'Leave' };
+  const TASK_LEAVE_STATUS = { pending: 'Waiting for approval', approved: 'Approved', rejected: 'Not approved', cancelled: 'Cancelled' };
+  const TASK_PART_LABEL = { full: '', half_am: 'Half day, morning off', half_pm: 'Half day, afternoon off' };
 
-    const list = taskEl('tkRequestList');
-    if (!taskRequests.length){
-      list.innerHTML = '<div class="tk-empty"><span class="big">&#128172;</span>You have not asked for any help yet.</div>';
-      return;
-    }
-    list.innerHTML = taskRequests.map(r => {
-      const st = r.status === 'waiting' ? 'pending' : r.status;
-      return `
+  function taskHelpCardHtml(r){
+    const st = r.status === 'waiting' ? 'pending' : r.status;
+    return `
       <div class="task-card ${r.priority === 'urgent' ? 'urgent' : ''} ${r.status === 'done' ? 'is-done' : ''}" data-task="${r.task_id}">
         <div class="task-main">
           <div class="task-title-row"><span class="task-title">${escapeHtml(r.title)}</span>
+            <span class="tk-chip help">Help</span>
             ${r.priority === 'urgent' ? '<span class="tk-chip urgent">Urgent</span>' : ''}
             <span class="tk-chip ${st}">${TASK_REQ_STATUS[r.status] || r.status}</span></div>
           <div class="task-meta">To ${escapeHtml(r.assigned_to || 'admin')} &middot; ${formatDMY(r.created_at)}${r.completed_at ? ' &middot; Done ' + formatDMY(r.completed_at) + ' ' + taskTime(r.completed_at) : ''}</div>
@@ -201,7 +195,114 @@
           ${r.status === 'pending' || r.status === 'waiting' ? '<div class="task-actions"><button type="button" class="task-link task-cancel-request">Cancel request</button></div>' : ''}
         </div>
       </div>`;
-    }).join('');
+  }
+
+  function taskLeaveCardHtml(l){
+    const same = l.from_date === l.to_date;
+    const dates = same ? formatDMY(l.from_date) : `${formatDMY(l.from_date)} to ${formatDMY(l.to_date)}`;
+    const part = TASK_PART_LABEL[l.day_part] ? ' &middot; ' + TASK_PART_LABEL[l.day_part] : '';
+    const n = Number(l.days);
+    const canCancel = l.status === 'pending' || (l.status === 'approved' && l.from_date > taskTodayStr());
+    const who = escapeHtml(l.decided_by_name || 'the admin');
+    return `
+      <div class="task-card leave-card ${l.status}" data-leave="${l.id}">
+        <div class="task-main">
+          <div class="task-title-row"><span class="task-title">${TASK_LEAVE_TYPE[l.leave_type] || 'Leave'}</span>
+            <span class="tk-chip leave">Leave</span>
+            <span class="tk-chip ${l.status}">${TASK_LEAVE_STATUS[l.status] || l.status}</span></div>
+          <div class="task-meta">${dates} &middot; ${n} day${n === 1 ? '' : 's'}${part}</div>
+          <div class="task-desc">${escapeHtml(l.reason)}</div>
+          ${l.decision_note ? `<div class="task-note-box ${l.status === 'approved' ? 'reply' : 'ask'}"><b>Note from ${who}</b>${escapeHtml(l.decision_note)}</div>` : ''}
+          ${l.decided_at && !l.decision_note ? `<div class="task-meta" style="margin-top:6px;">${l.status === 'approved' ? 'Approved' : 'Decided'} by ${who}</div>` : ''}
+          ${canCancel ? '<div class="task-actions"><button type="button" class="task-link task-cancel-leave">Cancel leave</button></div>' : ''}
+        </div>
+      </div>`;
+  }
+
+  function taskRenderRequests(){
+    const sel = taskEl('tkReqAdmin');
+    const keep = sel.value;
+    sel.innerHTML = taskAdmins.length
+      ? taskAdmins.map(a => `<option value="${a.id}">${escapeHtml(a.name)}</option>`).join('')
+      : '<option value="">No admin available</option>';
+    if (keep && taskAdmins.some(a => a.id === keep)) sel.value = keep;
+
+    const items = [
+      ...taskRequests.map(r => ({ t: new Date(r.created_at).getTime(), html: taskHelpCardHtml(r) })),
+      ...taskLeaves.map(l => ({ t: new Date(l.created_at).getTime(), html: taskLeaveCardHtml(l) }))
+    ].sort((a, b) => b.t - a.t);
+
+    taskEl('tkRequestList').innerHTML = items.length
+      ? items.map(i => i.html).join('')
+      : '<div class="tk-empty"><span class="big">&#128172;</span>No requests yet. Ask for help or apply for leave above.</div>';
+  }
+
+  // ----- Leave application -----
+  function taskLeaveRange(){
+    const part = taskEl('tkLvPart').value;
+    const from = taskEl('tkLvFrom').value;
+    const to = part === 'full' ? (taskEl('tkLvTo').value || from) : from;
+    return { part, from, to };
+  }
+
+  // Updates the live summary line; returns { valid, ... } for the submit button.
+  function taskLeaveSummary(){
+    const { part, from, to } = taskLeaveRange();
+    const box = taskEl('tkLvSummary');
+    taskEl('tkLvToWrap').hidden = part !== 'full';
+    taskEl('tkLvFromLabel').textContent = part === 'full' ? 'From' : 'Date';
+    const today = taskTodayStr();
+    taskEl('tkLvFrom').min = today;
+    taskEl('tkLvTo').min = from || today;
+    const say = (text, warn) => { box.textContent = text; box.className = 'tk-lv-summary' + (warn ? ' warn' : ''); return { valid: !warn && !!from }; };
+
+    if (!from){ say('Pick your leave dates.', false); return { valid: false }; }
+    if (from < today) return say('Leave cannot start in the past.', true);
+    if (to < from) return say('The end date is before the start date.', true);
+    const days = part === 'full' ? taskDaysBetween(from, to) + 1 : 0.5;
+    if (days > 60) return say('Leave cannot be longer than 60 days at a time.', true);
+    const text = part === 'full'
+      ? `${days} day${days > 1 ? 's' : ''}: ${formatDMY(from)}${to !== from ? ' to ' + formatDMY(to) : ''}`
+      : `Half day (${part === 'half_am' ? 'morning off' : 'afternoon off'}): ${formatDMY(from)}`;
+    say(text, false);
+    return { valid: true, part, from, to, days };
+  }
+
+  async function taskApplyLeave(){
+    const msg = taskEl('tkLvMsg');
+    const show = (t, k) => { msg.textContent = t; msg.className = 'tk-msg ' + k; };
+    const info = taskLeaveSummary();
+    if (!info.valid){ show('Please check the leave dates.', 'err'); return { ok: false }; }
+    const reason = taskEl('tkLvReason').value.trim();
+    if (!reason){ show('Please give a reason.', 'err'); return { ok: false }; }
+    const btn = taskEl('tkLvSend'); btn.disabled = true;
+    const { error } = await sb.rpc('leave_apply', {
+      p_type: taskEl('tkLvType').value, p_from: info.from, p_to: info.to, p_day_part: info.part, p_reason: reason
+    });
+    btn.disabled = false;
+    if (error){ show(error.message, 'err'); return { ok: false }; }
+    taskEl('tkLvReason').value = ''; taskEl('tkLvFrom').value = ''; taskEl('tkLvTo').value = '';
+    taskLeaveSummary();
+    show('Leave request sent. The admins will approve or reply.', 'ok');
+    await taskLoad();
+    taskRender(false);
+    return { ok: true };
+  }
+
+  async function taskCancelLeave(id){
+    const { error } = await sb.rpc('leave_cancel', { p_id: id });
+    if (error){ taskToast(error.message); return { ok: false }; }
+    taskToast('Leave cancelled.');
+    await taskLoad();
+    taskRender(false);
+    return { ok: true };
+  }
+
+  function taskSwitchMode(mode){
+    document.querySelectorAll('#tab-tasks .tk-seg-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+    taskEl('tkHelpForm').hidden = mode !== 'help';
+    taskEl('tkLeaveForm').hidden = mode !== 'leave';
+    if (mode === 'leave') taskLeaveSummary();
   }
 
   async function taskSendRequest(){
@@ -225,12 +326,29 @@
 
   // ----- Data -----
   async function taskLoad(){
-    const [mine, reqs, admins] = await Promise.all([
-      sb.rpc('task_list_mine'), sb.rpc('task_my_requests'), sb.rpc('task_assignees')
+    const [mine, reqs, admins, leaves] = await Promise.all([
+      sb.rpc('task_list_mine'), sb.rpc('task_my_requests'), sb.rpc('task_assignees'), sb.rpc('leave_my_list')
     ]);
     if (!mine.error) taskItems = mine.data || [];
     if (!reqs.error) taskRequests = reqs.data || [];
     if (!admins.error) taskAdmins = admins.data || [];
+    if (!leaves.error){
+      taskLeaves = leaves.data || [];
+      taskLeaveNotify();
+    }
+  }
+
+  // After the first load, tell the employee when a pending leave gets approved / rejected.
+  function taskLeaveNotify(){
+    const now = {};
+    taskLeaves.forEach(l => { now[l.id] = l.status; });
+    if (taskLeaveSeen){
+      taskLeaves.forEach(l => {
+        if (taskLeaveSeen[l.id] === 'pending' && l.status === 'approved') taskToast('Good news: your leave was approved.');
+        if (taskLeaveSeen[l.id] === 'pending' && l.status === 'rejected') taskToast('Your leave was not approved. Open Requests for the note.');
+      });
+    }
+    taskLeaveSeen = now;
   }
 
   async function taskRefresh(animate){
@@ -314,6 +432,16 @@
     const sub = t.closest('.tk-subtab');
     if (sub){ taskSwitchSub(sub.dataset.sub); return; }
     if (t.closest('#tkReqSend')){ taskSendRequest(); return; }
+    const seg = t.closest('.tk-seg-btn');
+    if (seg){ taskSwitchMode(seg.dataset.mode); return; }
+    if (t.closest('#tkLvSend')){ taskApplyLeave(); return; }
+    const lvCancel = t.closest('.task-cancel-leave');
+    if (lvCancel){
+      lvCancel.disabled = true;
+      const r = await taskCancelLeave(lvCancel.closest('.task-card').dataset.leave);
+      if (!r.ok) lvCancel.disabled = false;
+      return;
+    }
 
     const reqBtn = t.closest('.task-cancel-request');
     if (reqBtn){
@@ -360,9 +488,15 @@
     }
   });
 
+  ['tkLvType', 'tkLvPart', 'tkLvFrom', 'tkLvTo'].forEach(id => {
+    taskEl(id).addEventListener('change', taskLeaveSummary);
+    taskEl(id).addEventListener('input', taskLeaveSummary);
+  });
+
   // Called by login.js once an employee is signed in.
   async function taskInitEmployee(){
     taskSwitchSub('today');
+    taskSwitchMode('help');
     await taskRefresh(true);
     // Pick up new tasks / admin replies without a reload (skipped while someone is typing).
     setInterval(() => { if (!document.querySelector('#tab-tasks .task-inline:not([hidden])')) taskRefresh(false); }, 120000);
