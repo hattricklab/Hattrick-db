@@ -39,6 +39,7 @@
       // Boss has no check-in rules; admins and employees do.
       attInit({ kind: appIsBoss ? 'boss' : 'admin', id: adminMatch.id, name: adminMatch.name || adminMatch.username });
       pwCheckPending();
+      taskAdminInit();
       await Promise.allSettled([
         loadEmployees(),
         loadServices(),
@@ -74,6 +75,7 @@
     startIdleWatch();
     await loadOpenSession();
     pwCheckPending();
+    taskInitEmployee();
     await Promise.allSettled([
       loadHistory(),
       loadCustomers(),
