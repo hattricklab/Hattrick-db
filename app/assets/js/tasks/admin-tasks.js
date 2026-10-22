@@ -1,4 +1,4 @@
-  // ---------- Admin / Boss: assign tasks, answer doubts, follow progress ----------
+// ---------- Admin / Boss: assign tasks, answer doubts, follow progress ----------
   // The boss sees every task (employees and admins). An admin sees the tasks they
   // assigned and the help requests addressed to them. The database enforces this.
   const AT_WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -7,6 +7,8 @@
   let atRows = [];          // task_admin_list
   let atRepeating = [];     // task_admin_repeating
   let atEmployees = [];     // task_assignees (employees)
+  let atLeaves = [];        // leave_admin_list
+  let atLeaveToday = [];    // leave_today
 
   const atEl = id => document.getElementById(id);
   const atMsgEl = () => atEl('atMsg');
@@ -91,7 +93,8 @@
   function atRenderAttention(){
     const rows = atAttentionRows();
     const badge = atEl('atBadge');
-    badge.textContent = String(rows.length); badge.hidden = rows.length === 0;
+    const waiting = rows.length + atLeaves.filter(l => l.status === 'pending').length;
+    badge.textContent = String(waiting); badge.hidden = waiting === 0;
     const box = atEl('atAttention');
     if (!rows.length){ box.innerHTML = '<div class="empty">Nothing needs your attention right now.</div>'; return; }
     box.innerHTML = rows.map(r => {
@@ -162,16 +165,60 @@
       </div>`).join('');
   }
 
+  // ----- Leave requests -----
+  const AT_LEAVE_TYPE = { casual: 'Casual leave', sick: 'Sick leave', emergency: 'Emergency leave', other: 'Other leave' };
+  const AT_PART = { full: '', half_am: 'Half day, morning off', half_pm: 'Half day, afternoon off' };
+
+  function atLeaveDates(l){
+    const dates = l.from_date === l.to_date ? formatDMY(l.from_date) : `${formatDMY(l.from_date)} to ${formatDMY(l.to_date)}`;
+    const n = Number(l.days);
+    return `${dates} &middot; ${n} day${n === 1 ? '' : 's'}${AT_PART[l.day_part] ? ' &middot; ' + AT_PART[l.day_part] : ''}`;
+  }
+
+  function atRenderLeaves(){
+    const todayBox = atEl('atLeaveToday');
+    const partText = p => p === 'half_am' ? 'morning off' : (p === 'half_pm' ? 'afternoon off' : 'full day');
+    todayBox.textContent = atLeaveToday.length
+      ? 'On leave today: ' + atLeaveToday.map(l => `${l.employee_name} (${partText(l.day_part)})`).join(', ')
+      : 'Nobody is on approved leave today.';
+
+    const pending = atLeaves.filter(l => l.status === 'pending');
+    atEl('atLeavePending').innerHTML = pending.length ? pending.map(l => `
+      <div class="at-row" data-leave="${l.id}">
+        <div class="at-title">${escapeHtml(l.employee_name)} <span class="at-chip leave">${AT_LEAVE_TYPE[l.leave_type] || 'Leave'}</span></div>
+        <div class="at-sub">${atLeaveDates(l)} &middot; applied ${atWhen(l.created_at)}</div>
+        <div class="at-quote"><b>Reason</b>${escapeHtml(l.reason)}</div>
+        <div class="at-actions">
+          <textarea class="task-textarea at-leave-note" maxlength="500" placeholder="Note for ${escapeHtml(l.employee_name)} (required if you reject)"></textarea>
+          <button type="button" class="btn moss at-leave-approve">Approve</button>
+          <button type="button" class="btn ghost at-leave-reject">Reject</button>
+        </div>
+      </div>`).join('') : '<div class="empty">No leave requests waiting.</div>';
+
+    const history = atLeaves.filter(l => l.status !== 'pending').slice(0, 15);
+    atEl('atLeaveHistory').innerHTML = history.length ? history.map(l => `
+      <div class="at-row">
+        <div class="at-title">${escapeHtml(l.employee_name)} <span class="at-chip ${l.status}">${l.status === 'rejected' ? 'Rejected' : l.status[0].toUpperCase() + l.status.slice(1)}</span>
+          <span class="at-chip leave">${AT_LEAVE_TYPE[l.leave_type] || 'Leave'}</span></div>
+        <div class="at-sub">${atLeaveDates(l)}${l.decided_by_name ? ' &middot; by ' + escapeHtml(l.decided_by_name) : ''}</div>
+        ${l.decision_note ? `<div class="at-quote"><b>Note</b>${escapeHtml(l.decision_note)}</div>` : ''}
+      </div>`).join('') : '<div class="empty">No decisions yet.</div>';
+  }
+
   function atRenderAll(){
+    atRenderLeaves();
     atRenderAttention();
     atRenderRepeating();
     atRenderActivity();
   }
 
   async function atLoad(){
-    const [emps, list, rep] = await Promise.all([
-      sb.rpc('task_assignees'), sb.rpc('task_admin_list'), sb.rpc('task_admin_repeating')
+    const [emps, list, rep, leaves, leaveToday] = await Promise.all([
+      sb.rpc('task_assignees'), sb.rpc('task_admin_list'), sb.rpc('task_admin_repeating'),
+      sb.rpc('leave_admin_list'), sb.rpc('leave_today')
     ]);
+    if (!leaves.error) atLeaves = leaves.data || [];
+    if (!leaveToday.error) atLeaveToday = leaveToday.data || [];
     if (!emps.error) atEmployees = emps.data || [];
     if (!list.error) atRows = list.data || [];
     if (!rep.error) atRepeating = rep.data || [];
@@ -187,7 +234,18 @@
     const row = t.closest('.at-row');
     if (!row) return;
 
-    if (t.closest('.at-reply-btn')){
+    if (t.closest('.at-leave-approve') || t.closest('.at-leave-reject')){
+      const approve = !!t.closest('.at-leave-approve');
+      const btn = t.closest(approve ? '.at-leave-approve' : '.at-leave-reject');
+      const note = row.querySelector('.at-leave-note').value;
+      if (!approve && !note.trim()){ atShow('Please write the reason for rejecting the leave.', 'err'); return; }
+      btn.disabled = true;
+      const { error } = await sb.rpc('leave_decide', { p_id: row.dataset.leave, p_approve: approve, p_note: note });
+      btn.disabled = false;
+      if (error){ atShow(error.message, 'err'); return; }
+      atShow(approve ? 'Leave approved. The employee will see it.' : 'Leave rejected. The employee will see your note.', 'ok');
+      await atLoad();
+    } else if (t.closest('.at-reply-btn')){
       const btn = t.closest('.at-reply-btn');
       const text = row.querySelector('.at-reply-text').value;
       btn.disabled = true;
