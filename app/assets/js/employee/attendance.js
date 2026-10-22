@@ -286,6 +286,15 @@
   });
 
   // ----- Admin: dashboard "on shift now" card -----
+  async function attLeaveLine(){
+    try {
+      const { data, error } = await sb.rpc('leave_today');
+      if (error || !data || !data.length) return '';
+      const part = p => p === 'half_am' ? 'morning off' : (p === 'half_pm' ? 'afternoon off' : 'on leave');
+      return `<div class="att-leave-line">On leave today: ${data.map(l => escapeHtml(l.employee_name) + ' (' + part(l.day_part) + ')').join(', ')}</div>`;
+    } catch (e) { return ''; }
+  }
+
   async function attLoadDashboard(){
     const body = document.getElementById('attDashBody');
     if (!body) return;
@@ -293,7 +302,8 @@
       .select('id, check_in, last_seen, idle_logout_at, actor_name, employee_id, admin_id, employees(name, username)')
       .is('check_out', null).order('check_in', { ascending: true });
     if (error){ body.innerHTML = '<div class="empty">Could not load attendance.</div>'; return; }
-    if (!data || data.length === 0){ body.innerHTML = '<div class="empty">Nobody is checked in right now.</div>'; return; }
+    const leaveHtml = await attLeaveLine();
+    if (!data || data.length === 0){ body.innerHTML = '<div class="empty">Nobody is checked in right now.</div>' + leaveHtml; return; }
 
     const now = Date.now();
     const rows = data.map(r => {
@@ -313,7 +323,7 @@
                hours: attFmtDur(elapsed), level, badge, notes: notes.join(' · '), rank: level === 'red' ? 0 : (level === 'amber' ? 1 : 2) };
     }).sort((a, b) => a.rank - b.rank);
 
-    body.innerHTML = rows.map(r => `
+    body.innerHTML = leaveHtml + rows.map(r => `
       <div class="att-row">
         <div>
           <div class="att-name">${escapeHtml(r.name)} <span class="att-kind">${r.kind}</span></div>
