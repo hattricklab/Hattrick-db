@@ -184,3 +184,29 @@
   .tk-confetti{ display:none; }
   .task-card.is-done .task-check svg,.task-card.celebrate .task-check svg{ animation:none; stroke-dashoffset:0; }
 }
+
+/* ---------- Requests sub tab: help + leave ---------- */
+.tk-seg{ display:inline-flex; gap:4px; padding:4px; margin-bottom:16px; background:rgba(255,255,255,.7); border:1px solid #d6e3db; border-radius:999px; }
+.tk-seg-btn{ border:none; background:transparent; padding:8px 18px; border-radius:999px; font-family:inherit; font-size:13px; font-weight:600; color:var(--tk-ink); cursor:pointer; transition:all .2s ease; }
+.tk-seg-btn.active{ background:#fff; color:var(--tk-sage-dark); box-shadow:0 2px 10px rgba(47,62,70,.12); }
+.tk-form[hidden]{ display:none; }
+.tk-row2{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.tk-row2 .tk-field[hidden], .tk-field[hidden]{ display:none; }
+.tk-form input[type=date]{ width:100%; padding:10px 12px; border:1px solid #d6e3db; border-radius:10px; font-family:inherit; font-size:14px; background:#fff; box-sizing:border-box; }
+.tk-lv-summary{ margin:2px 0 14px; padding:10px 14px; border-radius:12px; background:var(--tk-sage-soft); color:var(--tk-sage-dark); font-size:14px; font-weight:600; }
+.tk-lv-summary.warn{ background:var(--tk-coral-soft); color:#b4472b; }
+.tk-chip.help{ background:var(--tk-lav-soft); color:#5b4bb7; }
+.tk-chip.leave{ background:#fdf1d8; color:#9a6b00; }
+.tk-chip.approved{ background:var(--tk-sage-soft); color:var(--tk-sage-dark); }
+.tk-chip.rejected{ background:var(--tk-coral-soft); color:#b4472b; }
+.task-card.leave-card{ border-left-color:var(--tk-gold); }
+.task-card.leave-card.approved{ border-left-color:var(--tk-sage); background:rgba(238,246,241,.85); }
+.task-card.leave-card.rejected{ border-left-color:var(--tk-coral); }
+.task-card.leave-card.cancelled{ opacity:.7; }
+.at-chip.approved{ background:#e6f0ea; color:#46705f; }
+.at-chip.rejected{ background:#fbe9e3; color:#c0502f; }
+.at-chip.leave{ background:#fdf1d8; color:#9a6b00; }
+@media (max-width:560px){ .tk-row2{ grid-template-columns:1fr; } }
+
+/* dashboard attendance card: employees on approved leave today */
+.att-leave-line{ margin:0 0 10px; padding:8px 12px; border-radius:10px; background:#fdf1d8; color:#9a6b00; font-size:13px; font-weight:600; }
