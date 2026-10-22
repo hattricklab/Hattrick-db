@@ -18,6 +18,7 @@
 <link rel="stylesheet" href="assets/css/accounts.css">
 <link rel="stylesheet" href="assets/css/attendance.css">
 <link rel="stylesheet" href="assets/css/security.css">
+<link rel="stylesheet" href="assets/css/tasks.css">
 </head>
 <body>
 
@@ -63,6 +64,7 @@
   <div class="tabs">
     <button class="tab-btn active" data-tab="admin-dashboard">Dashboard</button>
     <button class="tab-btn" data-tab="admin-employees">Employee Management</button>
+    <button class="tab-btn" data-tab="admin-tasks">Tasks <span class="task-badge" id="atBadge" hidden>0</span></button>
     <button class="tab-btn" data-tab="admin-services">Services</button>
     <button class="tab-btn" data-tab="admin-accounts">Accounts</button>
     <button class="tab-btn" data-tab="admin-customers">Customers</button>
@@ -189,6 +191,62 @@
         <div class="field"><label>Confirm new password</label><input id="bossPwConfirm" type="password" autocomplete="new-password" /></div>
       </div>
       <button class="btn moss" id="bossPwBtn">Change my password</button>
+    </div>
+  </div>
+
+  <!-- Tasks (admin: own assignments; boss: everything) -->
+  <div class="tab-panel" id="tab-admin-tasks">
+    <div class="panel">
+      <div class="panel-header-row">
+        <div class="panel-title" style="margin-bottom:0;">Assign a task</div>
+        <button class="btn ghost btn-sm" id="atRefreshBtn" type="button">Refresh</button>
+      </div>
+      <div class="cust-meta" id="atScope" style="margin-bottom:10px;"></div>
+      <div class="tk-msg" id="atMsg"></div>
+      <div class="form-row">
+        <div class="field"><label>Employee</label><select class="field-select" id="atEmployee"></select></div>
+        <div class="field"><label>Task title</label><input id="atTitle" type="text" maxlength="120" placeholder="What should they do?" /></div>
+      </div>
+      <div class="field"><label>Description (optional)</label><textarea class="task-textarea" id="atDescription" maxlength="500"></textarea></div>
+      <div class="form-row">
+        <div class="field"><label>Repeat</label>
+          <select class="field-select" id="atRepeat">
+            <option value="none">One time</option>
+            <option value="daily">Every day</option>
+            <option value="weekly">Every week</option>
+            <option value="monthly">Every month</option>
+          </select>
+        </div>
+        <div class="field" id="atWeekdayWrap" style="display:none;"><label>Day of the week</label><select class="field-select" id="atWeekday"></select></div>
+        <div class="field" id="atMonthdayWrap" style="display:none;"><label>Day of the month</label><select class="field-select" id="atMonthday"></select></div>
+        <div class="field" id="atDueWrap"><label>Due date (optional, default today)</label><input id="atDue" type="date" /></div>
+      </div>
+      <div class="tk-check-row"><input type="checkbox" id="atUrgent" /><label for="atUrgent" style="margin:0;">Urgent / emergency task</label></div>
+      <button class="btn moss" id="atAssignBtn" type="button">Assign task</button>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Needs your attention</div>
+      <div id="atAttention"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Repeating tasks</div>
+      <div id="atRepeating"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Task activity</div>
+      <div class="at-filters">
+        <select class="field-select" id="atFilterStatus">
+          <option value="all">All statuses</option><option value="pending">Open</option>
+          <option value="waiting">Waiting for reply</option><option value="done">Done</option><option value="cancelled">Cancelled</option>
+        </select>
+        <select class="field-select" id="atFilterWho">
+          <option value="all">Employees and admins</option><option value="employee">Assigned to employees</option><option value="admin">Assigned to admins</option>
+        </select>
+      </div>
+      <div id="atActivity"></div>
     </div>
   </div>
 
@@ -497,7 +555,8 @@
   </div>
 
   <div class="tabs">
-    <button class="tab-btn active" data-tab="customer">Customer Registration</button>
+    <button class="tab-btn active" data-tab="tasks">Today's Tasks <span class="task-badge" id="taskTabBadge" hidden>0</span></button>
+    <button class="tab-btn" data-tab="customer">Customer Registration</button>
     <button class="tab-btn" data-tab="invoice">Invoice Generator</button>
     <button class="tab-btn" data-tab="inventory">Inventory Update</button>
     <button class="tab-btn" data-tab="tools">Tools</button>
@@ -505,7 +564,44 @@
     <button class="tab-btn" data-tab="accounts">Accounts</button>
   </div>
 
-  <div class="tab-panel active" id="tab-customer">
+  <!-- Today's Tasks (first tab, shown right after check-in) -->
+  <div class="tab-panel active" id="tab-tasks">
+    <div class="tk-calm">
+      <div class="tk-head">
+        <div>
+          <h2 class="tk-hello" id="tkHello"></h2>
+          <div class="tk-date" id="tkDate"></div>
+        </div>
+        <div class="tk-ring" aria-label="Tasks done today">
+          <svg viewBox="0 0 84 84"><circle class="tk-ring-bg" cx="42" cy="42" r="34"></circle><circle class="tk-ring-fg" id="tkRingFg" cx="42" cy="42" r="34"></circle></svg>
+          <div class="tk-ring-label"><b id="tkRingText">0/0</b><span>done</span></div>
+        </div>
+      </div>
+
+      <div class="tk-subtabs">
+        <button type="button" class="tk-subtab active" data-sub="today">Today</button>
+        <button type="button" class="tk-subtab" data-sub="pending">Pending <span class="task-badge" id="tkPendingBadge" hidden>0</span></button>
+        <button type="button" class="tk-subtab" data-sub="help">Request a help</button>
+      </div>
+
+      <div class="tk-subpanel active" data-sub="today"><div id="tkTodayList"></div></div>
+      <div class="tk-subpanel" data-sub="pending"><div id="tkPendingList"></div></div>
+      <div class="tk-subpanel" data-sub="help">
+        <div class="tk-form">
+          <div class="tk-field"><label for="tkReqAdmin">Ask which admin</label><select id="tkReqAdmin"></select></div>
+          <div class="tk-field"><label for="tkReqTitle">What do you need help with?</label><input type="text" id="tkReqTitle" maxlength="120" placeholder="Short title" /></div>
+          <div class="tk-field"><label for="tkReqDesc">Details (optional)</label><textarea class="task-textarea" id="tkReqDesc" maxlength="500"></textarea></div>
+          <div class="tk-check-row"><input type="checkbox" id="tkReqUrgent" /><label for="tkReqUrgent" style="margin:0; text-transform:none; letter-spacing:0; font-size:14px; color:inherit;">This is urgent</label></div>
+          <button type="button" class="tk-btn" id="tkReqSend">Send request</button>
+          <div class="tk-msg" id="tkReqMsg"></div>
+        </div>
+        <div class="tk-group-title">My requests</div>
+        <div id="tkRequestList"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="tab-customer">
     <div class="panel">
       <div class="panel-header-row">
         <div class="panel-title" style="margin-bottom:0;">Register new customer</div>
@@ -1235,6 +1331,8 @@
 <script src="assets/js/employee/employee-timer.js"></script>
 <script src="assets/js/employee/attendance.js"></script>
 <script src="assets/js/security/user-management.js"></script>
+<script src="assets/js/tasks/employee-tasks.js"></script>
+<script src="assets/js/tasks/admin-tasks.js"></script>
 <script src="assets/js/customer/customer-registration.js"></script>
 <script src="assets/js/dashboard/accounts-summary-card.js"></script>
 <script src="assets/js/customer/patient-id-autosuggest.js"></script>
