@@ -231,6 +231,14 @@
     </div>
 
     <div class="panel">
+      <div class="panel-title">Leave requests</div>
+      <div class="cust-meta" id="atLeaveToday" style="margin-bottom:8px;"></div>
+      <div id="atLeavePending"></div>
+      <div class="tk-group-title" style="margin-top:18px; color:var(--ink-dim);">Recent decisions</div>
+      <div id="atLeaveHistory"></div>
+    </div>
+
+    <div class="panel">
       <div class="panel-title">Repeating tasks</div>
       <div id="atRepeating"></div>
     </div>
@@ -555,7 +563,7 @@
   </div>
 
   <div class="tabs">
-    <button class="tab-btn active" data-tab="tasks">Today's Tasks <span class="task-badge" id="taskTabBadge" hidden>0</span></button>
+    <button class="tab-btn active" data-tab="tasks">Tasks &amp; Requests <span class="task-badge" id="taskTabBadge" hidden>0</span></button>
     <button class="tab-btn" data-tab="customer">Customer Registration</button>
     <button class="tab-btn" data-tab="invoice">Invoice Generator</button>
     <button class="tab-btn" data-tab="inventory">Inventory Update</button>
@@ -564,7 +572,7 @@
     <button class="tab-btn" data-tab="accounts">Accounts</button>
   </div>
 
-  <!-- Today's Tasks (first tab, shown right after check-in) -->
+  <!-- Tasks & Requests (first tab, shown right after check-in) -->
   <div class="tab-panel active" id="tab-tasks">
     <div class="tk-calm">
       <div class="tk-head">
@@ -581,13 +589,18 @@
       <div class="tk-subtabs">
         <button type="button" class="tk-subtab active" data-sub="today">Today</button>
         <button type="button" class="tk-subtab" data-sub="pending">Pending <span class="task-badge" id="tkPendingBadge" hidden>0</span></button>
-        <button type="button" class="tk-subtab" data-sub="help">Request a help</button>
+        <button type="button" class="tk-subtab" data-sub="help">Requests</button>
       </div>
 
       <div class="tk-subpanel active" data-sub="today"><div id="tkTodayList"></div></div>
       <div class="tk-subpanel" data-sub="pending"><div id="tkPendingList"></div></div>
       <div class="tk-subpanel" data-sub="help">
-        <div class="tk-form">
+        <div class="tk-seg" role="tablist">
+          <button type="button" class="tk-seg-btn active" data-mode="help">Ask for help</button>
+          <button type="button" class="tk-seg-btn" data-mode="leave">Apply for leave</button>
+        </div>
+
+        <div class="tk-form" id="tkHelpForm">
           <div class="tk-field"><label for="tkReqAdmin">Ask which admin</label><select id="tkReqAdmin"></select></div>
           <div class="tk-field"><label for="tkReqTitle">What do you need help with?</label><input type="text" id="tkReqTitle" maxlength="120" placeholder="Short title" /></div>
           <div class="tk-field"><label for="tkReqDesc">Details (optional)</label><textarea class="task-textarea" id="tkReqDesc" maxlength="500"></textarea></div>
@@ -595,6 +608,35 @@
           <button type="button" class="tk-btn" id="tkReqSend">Send request</button>
           <div class="tk-msg" id="tkReqMsg"></div>
         </div>
+
+        <div class="tk-form" id="tkLeaveForm" hidden>
+          <div class="tk-row2">
+            <div class="tk-field"><label for="tkLvType">Leave type</label>
+              <select id="tkLvType">
+                <option value="casual">Casual leave</option>
+                <option value="sick">Sick leave</option>
+                <option value="emergency">Emergency</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div class="tk-field"><label for="tkLvPart">Duration</label>
+              <select id="tkLvPart">
+                <option value="full">Full day(s)</option>
+                <option value="half_am">Half day, morning off</option>
+                <option value="half_pm">Half day, afternoon off</option>
+              </select>
+            </div>
+          </div>
+          <div class="tk-row2">
+            <div class="tk-field"><label for="tkLvFrom" id="tkLvFromLabel">From</label><input type="date" id="tkLvFrom" /></div>
+            <div class="tk-field" id="tkLvToWrap"><label for="tkLvTo">To</label><input type="date" id="tkLvTo" /></div>
+          </div>
+          <div class="tk-lv-summary" id="tkLvSummary">Pick your leave dates.</div>
+          <div class="tk-field"><label for="tkLvReason">Reason</label><textarea class="task-textarea" id="tkLvReason" maxlength="500" placeholder="Tell the admin why you need leave"></textarea></div>
+          <button type="button" class="tk-btn" id="tkLvSend">Apply for leave</button>
+          <div class="tk-msg" id="tkLvMsg"></div>
+        </div>
+
         <div class="tk-group-title">My requests</div>
         <div id="tkRequestList"></div>
       </div>
