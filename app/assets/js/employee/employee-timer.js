@@ -44,10 +44,14 @@
   }
 
   async function loadHistory(){
+    // Employees see their own sessions; an admin using the same panel sees theirs.
+    const ownerColumn = currentEmployee ? 'employee_id' : 'admin_id';
+    const ownerId = currentEmployee ? currentEmployee.id : (currentAdmin ? currentAdmin.id : null);
+    if (!ownerId) return;
     const { data, error } = await sb
       .from('checkins')
       .select('id, check_in, check_out, duration_seconds')
-      .eq('employee_id', currentEmployee.id)
+      .eq(ownerColumn, ownerId)
       .not('check_out', 'is', null)
       .order('check_in', { ascending: false })
       .limit(10);
