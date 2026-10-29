@@ -25,5 +25,6 @@
       if (btn.dataset.tab === 'admin-services'){ loadServices(); }
       if (btn.dataset.tab === 'admin-dashboard'){ loadDashboardAccountsCard(); loadAdminStats(); }
       if (btn.dataset.tab === 'inventory'){ loadInventoryList(); }
+      if (btn.dataset.tab === 'timelog'){ loadHistory(); }
     });
   });
