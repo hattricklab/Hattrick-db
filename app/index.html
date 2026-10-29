@@ -19,6 +19,7 @@
 <link rel="stylesheet" href="assets/css/attendance.css">
 <link rel="stylesheet" href="assets/css/security.css">
 <link rel="stylesheet" href="assets/css/tasks.css">
+<link rel="stylesheet" href="assets/css/leave-guard.css">
 <link rel="stylesheet" href="assets/css/responsive.css">
 </head>
 <body>
@@ -73,6 +74,12 @@
     <button class="tab-btn" data-tab="admin-inventory">Inventory</button>
     <button class="tab-btn" data-tab="admin-tools">Tools</button>
     <button class="tab-btn boss-only" data-tab="admin-security">Users &amp; Security</button>
+    <div class="tabs-label">Staff tools</div>
+    <button class="tab-btn" data-tab="customer">Customer Registration</button>
+    <button class="tab-btn" data-tab="invoice">Invoice Generator</button>
+    <button class="tab-btn" data-tab="inventory">Inventory Update</button>
+    <button class="tab-btn" data-tab="accounts">Daily Closing</button>
+    <button class="tab-btn staff-timelog" data-tab="timelog">My Time Log</button>
   </div>
 
   <!-- Dashboard -->
@@ -1351,6 +1358,17 @@
   </div>
 </div>
 
+<!-- "You forgot last time" reminder: shows for a few seconds after login, then the normal popup follows -->
+<div class="forget-overlay" id="forgetReminder" role="alertdialog" aria-live="polite" aria-labelledby="forgetTitle">
+  <div class="forget-card">
+    <div class="forget-emoji" id="forgetEmoji"></div>
+    <div class="forget-title" id="forgetTitle"></div>
+    <div class="forget-text" id="forgetText"></div>
+    <div class="forget-bar"><i id="forgetBar"></i></div>
+    <div class="forget-note">This closes by itself in a moment</div>
+  </div>
+</div>
+
 <!-- ATTENDANCE GATE (forced check-in / 4-hour reminder). Black & white, no close button. -->
 <div class="att-overlay" id="attGate" role="dialog" aria-modal="true" aria-labelledby="attGateTitle">
   <div class="att-box">
@@ -1367,6 +1385,7 @@
 <script src="assets/js/core/logo.js"></script>
 <script src="assets/js/core/datetime.js"></script>
 <script src="assets/js/core/screens.js"></script>
+<script src="assets/js/ui/leave-guard.js"></script>
 <script src="assets/js/auth/login.js"></script>
 <script src="assets/js/dashboard/admin-stats.js"></script>
 <script src="assets/js/employee/admin-employee-management.js"></script>
