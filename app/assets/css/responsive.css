@@ -68,3 +68,11 @@ img, svg, video, canvas{ max-width:100%; }
   #tab-admin-accounts .stat-card, #tab-accounts .stat-card{ container-type:inline-size; }
   #tab-admin-accounts .stat-value, #tab-accounts .stat-value{ font-size:clamp(18px, 14cqw, 34px); }
 }
+
+/* ----- "Staff tools" group in the admin / boss tab bar ----- */
+.tabs-label{
+  flex:0 0 100%; padding:10px 2px 2px; font-family:var(--font-mono); font-size:10px; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--ink-dim);
+}
+@media (max-width:640px){ .tabs-label{ grid-column:1 / -1; padding:6px 2px 0; } }
+body.is-boss .staff-timelog{ display:none; }          /* the boss does not check in */
