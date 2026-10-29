@@ -1,4 +1,4 @@
-  // ---------- Closing check (live match/mismatch as you type) ----------
+// ---------- Closing check (live match/mismatch as you type) ----------
   function acctUpdateClosingCheck(){
     const cashInput = document.getElementById('acctActualCash').value;
     const digitalInput = document.getElementById('acctActualDigital').value;
@@ -75,7 +75,7 @@
 
     const record = {
       closureDate: acctToday(),
-      employeeName: currentEmployee ? (currentEmployee.name || currentEmployee.username) : 'Unknown',
+      employeeName: (currentEmployee || currentAdmin) ? ((currentEmployee || currentAdmin).name || (currentEmployee || currentAdmin).username) : 'Unknown',
       calculatedCash: acctClosingCashVal,
       actualCash,
       cashDifference: parseFloat((actualCash - acctClosingCashVal).toFixed(2)),
@@ -100,4 +100,3 @@
     acctUpdateClosingCheck();
     await acctLoadHistory();
   });
-
