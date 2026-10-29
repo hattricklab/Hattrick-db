@@ -15,7 +15,9 @@
 
   async function expLoad(){
     await expRefreshEmployeeCategoryOptions();
-    const { data, error } = await sb.from('expenses').select('*').neq('added_by', 'admin').order('date', { ascending: false }).limit(100);
+    let expQuery = sb.from('expenses').select('*');
+    if (!currentAdmin) expQuery = expQuery.neq('added_by', 'admin');   // employees do not see admin-entered rows
+    const { data, error } = await expQuery.order('date', { ascending: false }).limit(100);
     const body = document.getElementById('expTableBody');
     if (error || !data || data.length === 0){
       body.innerHTML = '<tr><td colspan="5" class="empty">No expenses recorded yet.</td></tr>';
@@ -58,7 +60,7 @@
       return;
     }
 
-    const { error } = await sb.from('expenses').insert({ date, category, description, amount, source, added_by: 'employee' });
+    const { error } = await sb.from('expenses').insert({ date, category, description, amount, source, added_by: currentAdmin ? 'admin' : 'employee' });
     if (error){
       showMsg(document.getElementById('expMsg'), error.message, 'err');
       return;
