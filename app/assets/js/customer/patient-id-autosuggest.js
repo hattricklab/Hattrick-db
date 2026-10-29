@@ -61,15 +61,17 @@
       return;
     }
 
+    // Instantly searchable in the invoice generator; the lists below refresh in the background.
+    invAddCustomerLocally(newCustomer);
     showMsg(custMsg, 'Customer added.', 'ok');
     ['custName','custAge','custPhone','custEmail','custAddress','custBranch'].forEach(id => {
       document.getElementById(id).value = '';
     });
     document.getElementById('custTitle').value = 'Mr.';
     document.getElementById('custSex').value = 'Male';
-    await loadCustomers();
-    await suggestNextPatientId();
-    await loadAdminStats();
+    // These used to run one after another (each waiting for the previous). Now they run together
+    // and nothing blocks the person who just added the customer.
+    Promise.allSettled([loadCustomers(), suggestNextPatientId(), loadAdminStats()]);
   }
 
   document.getElementById('createCustBtn').addEventListener('click', async () => {
@@ -180,6 +182,12 @@
     const { data, error } = await sb.from('customers').select('*').order('name', { ascending: true });
     if (error || !data) return;                       // keep the current list if the read fails
     invAllCustomers = data.length > 0 ? data : INV_DEFAULT_CUSTOMERS;
+  }
+
+  // Puts a just-created patient into the invoice generator's list immediately (no network wait).
+  function invAddCustomerLocally(customer){
+    const row = Object.assign({ active: true }, customer);
+    invAllCustomers = [row, ...(Array.isArray(invAllCustomers) ? invAllCustomers.filter(c => c.id !== row.id) : [])];
   }
 
   async function invLoadInitialData(){
